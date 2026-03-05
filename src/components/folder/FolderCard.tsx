@@ -1,17 +1,7 @@
 import { useState } from "react"
-import {
-  ChevronRight,
-  Folder,
-  FolderOpen,
-  MoreHorizontal,
-  Plus,
-  Pencil,
-  Trash2,
-} from "lucide-react"
+import { Folder, MoreHorizontal, Plus, Pencil, Trash2 } from "lucide-react"
 import type { Folder as FolderType } from "@/types"
 import { useDataroomStore } from "@/stores/dataroomStore"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,83 +19,43 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { Button } from "@/components/ui/button"
 import { FolderDialog } from "./FolderDialog"
 
 interface Props {
   folder: FolderType
-  depth: number
-  allFolders: FolderType[]
 }
 
-export function FolderTreeItem({ folder, depth, allFolders }: Props) {
-  const {
-    activeFolderId,
-    expandedFolderIds,
-    setActiveFolder,
-    toggleFolderExpanded,
-    createFolder,
-    renameFolder,
-    deleteFolder,
-  } = useDataroomStore()
-
+export function FolderCard({ folder }: Props) {
+  const { setActiveFolder, createFolder, renameFolder, deleteFolder } = useDataroomStore()
   const [createOpen, setCreateOpen] = useState(false)
   const [renameOpen, setRenameOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
 
-  const children = allFolders.filter((f) => f.parentId === folder.id)
-  const isActive = activeFolderId === folder.id
-  const isExpanded = expandedFolderIds.includes(folder.id)
-  const hasChildren = children.length > 0
-
-  function handleClick() {
-    setActiveFolder(folder.id)
-  }
-
-  function handleToggle(e: React.MouseEvent) {
-    e.stopPropagation()
-    toggleFolderExpanded(folder.id)
-  }
-
   return (
-    <div>
+    <>
       <div
-        className={cn(
-          "group flex items-center gap-1 rounded-md py-1.5 cursor-pointer select-none text-sm hover:bg-accent",
-          isActive && "bg-accent font-medium"
-        )}
-        style={{ paddingLeft: `${8 + depth * 12}px`, paddingRight: "8px" }}
-        onClick={handleClick}
+        className="group flex items-center gap-3 rounded-lg border bg-card px-4 py-3 cursor-pointer hover:border-foreground/20 hover:shadow-sm transition-all"
+        onDoubleClick={() => setActiveFolder(folder.id)}
+        onClick={() => setActiveFolder(folder.id)}
       >
-        <button
-          className={cn(
-            "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
-            !hasChildren && "invisible",
-            isExpanded && "rotate-90"
-          )}
-          onClick={handleToggle}
-        >
-          <ChevronRight className="h-4 w-4" />
-        </button>
+        <div className="rounded-md bg-muted p-2 shrink-0">
+          <Folder className="h-5 w-5 text-muted-foreground" />
+        </div>
 
-        {isActive || isExpanded ? (
-          <FolderOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
-        ) : (
-          <Folder className="h-4 w-4 shrink-0 text-muted-foreground" />
-        )}
-
-        <span className="flex-1 truncate ml-1">{folder.name}</span>
+        <span className="flex-1 text-sm font-medium truncate">{folder.name}</span>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
             <Button
               variant="ghost"
               size="icon"
-              className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+              className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
             >
-              <MoreHorizontal className="h-3 w-3" />
+              <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" onClick={(e) => e.stopPropagation()}>
+          <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
             <DropdownMenuItem onClick={() => setCreateOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
               New subfolder
@@ -125,19 +75,6 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-
-      {isExpanded && children.length > 0 && (
-        <div>
-          {children.map((child) => (
-            <FolderTreeItem
-              key={child.id}
-              folder={child}
-              depth={depth + 1}
-              allFolders={allFolders}
-            />
-          ))}
-        </div>
-      )}
 
       <FolderDialog
         open={createOpen}
@@ -173,6 +110,6 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </>
   )
 }

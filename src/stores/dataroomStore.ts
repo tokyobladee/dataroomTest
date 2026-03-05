@@ -11,6 +11,7 @@ interface DataroomState {
   folders: Folder[]
   files: DataroomFile[]
   activeFolderId: string | null
+  expandedFolderIds: string[]
   isLoading: boolean
 
   loadDatarooms: () => Promise<void>
@@ -20,6 +21,7 @@ interface DataroomState {
   exitDataroom: () => void
 
   setActiveFolder: (id: string | null) => void
+  toggleFolderExpanded: (id: string) => void
   createFolder: (name: string, parentId: string | null) => Promise<void>
   renameFolder: (id: string, name: string) => Promise<void>
   deleteFolder: (id: string) => Promise<void>
@@ -36,6 +38,7 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
   folders: [],
   files: [],
   activeFolderId: null,
+  expandedFolderIds: [],
   isLoading: false,
 
   loadDatarooms: async () => {
@@ -55,13 +58,13 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
     set((s) => ({
       datarooms: s.datarooms.filter((d) => d.id !== id),
       ...(s.activeDataroomId === id
-        ? { activeDataroomId: null, folders: [], files: [], activeFolderId: null }
+        ? { activeDataroomId: null, folders: [], files: [], activeFolderId: null, expandedFolderIds: [] }
         : {}),
     }))
   },
 
   setActiveDataroom: async (id: string) => {
-    set({ isLoading: true, activeDataroomId: id, activeFolderId: null })
+    set({ isLoading: true, activeDataroomId: id, activeFolderId: null, expandedFolderIds: [] })
     const [folders, files] = await Promise.all([
       getFoldersByDataroom(id),
       getFilesByDataroom(id),
@@ -70,11 +73,27 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
   },
 
   exitDataroom: () => {
-    set({ activeDataroomId: null, folders: [], files: [], activeFolderId: null })
+    set({ activeDataroomId: null, folders: [], files: [], activeFolderId: null, expandedFolderIds: [] })
   },
 
   setActiveFolder: (id: string | null) => {
-    set({ activeFolderId: id })
+    if (id === null) {
+      set({ activeFolderId: null })
+      return
+    }
+    const ancestors = getAncestorIds(id, get().folders)
+    set((s) => ({
+      activeFolderId: id,
+      expandedFolderIds: Array.from(new Set([...s.expandedFolderIds, ...ancestors, id])),
+    }))
+  },
+
+  toggleFolderExpanded: (id: string) => {
+    set((s) => ({
+      expandedFolderIds: s.expandedFolderIds.includes(id)
+        ? s.expandedFolderIds.filter((fid) => fid !== id)
+        : [...s.expandedFolderIds, id],
+    }))
   },
 
   createFolder: async (name: string, parentId: string | null) => {
@@ -92,7 +111,12 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
       createdAt: Date.now(),
     }
     await createFolder(folder)
-    set((s) => ({ folders: [...s.folders, folder] }))
+    set((s) => ({
+      folders: [...s.folders, folder],
+      expandedFolderIds: parentId
+        ? Array.from(new Set([...s.expandedFolderIds, parentId]))
+        : s.expandedFolderIds,
+    }))
   },
 
   renameFolder: async (id: string, name: string) => {
@@ -111,6 +135,7 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
       folders: s.folders.filter((f) => !idsToDelete.has(f.id)),
       files: s.files.filter((f) => f.folderId === null || !idsToDelete.has(f.folderId)),
       activeFolderId: idsToDelete.has(s.activeFolderId ?? "") ? null : s.activeFolderId,
+      expandedFolderIds: s.expandedFolderIds.filter((fid) => !idsToDelete.has(fid)),
     }))
   },
 
@@ -160,6 +185,16 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
     }
   },
 }))
+
+function getAncestorIds(folderId: string, allFolders: Folder[]): string[] {
+  const ancestors: string[] = []
+  let current = allFolders.find((f) => f.id === folderId)
+  while (current?.parentId) {
+    ancestors.push(current.parentId)
+    current = allFolders.find((f) => f.id === current!.parentId)
+  }
+  return ancestors
+}
 
 function collectDescendantIds(parentId: string, allFolders: Folder[]): Set<string> {
   const result = new Set<string>()
