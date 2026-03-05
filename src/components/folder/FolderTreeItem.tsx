@@ -51,8 +51,8 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
   const hasChildren = children.length > 0
 
   function handleClick() {
-    setActiveFolder(isActive ? null : folder.id)
-    if (hasChildren) setExpanded((prev) => !prev)
+    setActiveFolder(folder.id)
+    if (hasChildren && !expanded) setExpanded(true)
   }
 
   function handleToggle(e: React.MouseEvent) {
@@ -60,14 +60,19 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
     setExpanded((prev) => !prev)
   }
 
+  async function handleCreateSubfolder(name: string) {
+    await createFolder(name, folder.id)
+    setExpanded(true)
+  }
+
   return (
     <div>
       <div
         className={cn(
-          "group flex items-center gap-1 rounded-md px-2 py-1.5 cursor-pointer select-none text-sm hover:bg-accent",
+          "group flex items-center gap-1 rounded-md py-1.5 cursor-pointer select-none text-sm hover:bg-accent",
           isActive && "bg-accent font-medium"
         )}
-        style={{ paddingLeft: `${8 + depth * 12}px` }}
+        style={{ paddingLeft: `${8 + depth * 12}px`, paddingRight: "8px" }}
         onClick={handleClick}
       >
         <button
@@ -87,7 +92,7 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
           <Folder className="h-4 w-4 shrink-0 text-muted-foreground" />
         )}
 
-        <span className="flex-1 truncate">{folder.name}</span>
+        <span className="flex-1 truncate ml-1">{folder.name}</span>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
@@ -137,7 +142,7 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
         open={createOpen}
         mode="create"
         onClose={() => setCreateOpen(false)}
-        onConfirm={(name) => createFolder(name, folder.id)}
+        onConfirm={handleCreateSubfolder}
       />
 
       <FolderDialog

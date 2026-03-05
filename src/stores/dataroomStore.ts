@@ -152,7 +152,12 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
     const blob = await getFileBlob(id)
     if (!blob) return
     const url = URL.createObjectURL(blob)
-    window.open(url, "_blank")
+    const tab = window.open(url, "_blank")
+    if (tab) {
+      tab.addEventListener("load", () => URL.revokeObjectURL(url))
+    } else {
+      setTimeout(() => URL.revokeObjectURL(url), 10_000)
+    }
   },
 }))
 
