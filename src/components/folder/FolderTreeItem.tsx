@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useRef, useState } from "react"
 import {
   ChevronRight,
   Folder,
@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { FolderDialog } from "./FolderDialog"
 import { FileTreeItem } from "@/components/file/FileTreeItem"
+import { handleDroppedFiles, isFileDrag } from "@/lib/dropFiles"
 
 interface Props {
   folder: FolderType
@@ -51,11 +52,14 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
     createFolder,
     renameFolder,
     deleteFolder,
+    uploadFile,
   } = useDataroomStore()
 
   const [createOpen, setCreateOpen] = useState(false)
   const [renameOpen, setRenameOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [isDragOver, setIsDragOver] = useState(false)
+  const dragCounter = useRef(0)
 
   const children = allFolders.filter((f) => f.parentId === folder.id)
   const folderFiles = files.filter((f) => f.folderId === folder.id)
@@ -64,15 +68,45 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
   const isSelected = selectedIds.includes(folder.id)
   const hasChildren = children.length > 0 || folderFiles.length > 0
 
+  function handleDragEnter(e: React.DragEvent) {
+    if (!isFileDrag(e)) return
+    e.preventDefault()
+    dragCounter.current++
+    setIsDragOver(true)
+  }
+
+  function handleDragLeave() {
+    dragCounter.current--
+    if (dragCounter.current === 0) setIsDragOver(false)
+  }
+
+  function handleDragOver(e: React.DragEvent) {
+    if (!isFileDrag(e)) return
+    e.preventDefault()
+  }
+
+  async function handleDrop(e: React.DragEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    dragCounter.current = 0
+    setIsDragOver(false)
+    await handleDroppedFiles(e.dataTransfer, (file) => uploadFile(file, folder.id))
+  }
+
   return (
     <div>
       <div
         className={cn(
           "group flex items-center gap-1 rounded-md py-1.5 cursor-pointer select-none text-sm hover:bg-accent",
-          (isActive || isSelected) && "bg-accent font-medium"
+          (isActive || isSelected) && "bg-accent font-medium",
+          isDragOver && "bg-accent ring-1 ring-inset ring-foreground/30"
         )}
         style={{ paddingLeft: `${8 + depth * 12}px`, paddingRight: "8px" }}
         onClick={() => setActiveFolder(folder.id)}
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
       >
         <button
           className={cn(

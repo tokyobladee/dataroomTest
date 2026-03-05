@@ -1,10 +1,15 @@
+import { useRef, useState } from "react"
 import { FileText, ChevronRight } from "lucide-react"
 import { useDataroomStore } from "@/stores/dataroomStore"
 import { FolderCard } from "@/components/folder/FolderCard"
 import { FileItem } from "./FileItem"
+import { handleDroppedFiles, isFileDrag } from "@/lib/dropFiles"
+import { cn } from "@/lib/utils"
 
 export function FileList() {
-  const { files, folders, activeFolderId, setActiveFolder } = useDataroomStore()
+  const { files, folders, activeFolderId, setActiveFolder, uploadFile } = useDataroomStore()
+  const [isDragOver, setIsDragOver] = useState(false)
+  const dragCounter = useRef(0)
 
   const activeFolder = folders.find((f) => f.id === activeFolderId) ?? null
   const subfolders = folders.filter((f) => f.parentId === activeFolderId)
@@ -12,8 +17,38 @@ export function FileList() {
 
   const breadcrumb = buildBreadcrumb(activeFolderId, folders)
 
+  function handleDragEnter(e: React.DragEvent) {
+    if (!isFileDrag(e)) return
+    e.preventDefault()
+    dragCounter.current++
+    setIsDragOver(true)
+  }
+
+  function handleDragLeave() {
+    dragCounter.current--
+    if (dragCounter.current === 0) setIsDragOver(false)
+  }
+
+  function handleDragOver(e: React.DragEvent) {
+    if (!isFileDrag(e)) return
+    e.preventDefault()
+  }
+
+  async function handleDrop(e: React.DragEvent) {
+    e.preventDefault()
+    dragCounter.current = 0
+    setIsDragOver(false)
+    await handleDroppedFiles(e.dataTransfer, (file) => uploadFile(file, activeFolderId))
+  }
+
   return (
-    <div className="flex flex-col h-full p-6 gap-6">
+    <div
+      className={cn("flex flex-col h-full p-6 gap-6 transition-colors", isDragOver && "bg-accent/40")}
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
       <div className="flex flex-col gap-1">
         <nav className="flex items-center gap-1 text-sm text-muted-foreground">
           <button

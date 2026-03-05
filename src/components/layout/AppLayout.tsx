@@ -7,8 +7,16 @@ interface Props {
 }
 
 export function AppLayout({ sidebar, children }: Props) {
+  function preventBrowserFileDrop(e: React.DragEvent) {
+    e.preventDefault()
+  }
+
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div
+      className="flex h-screen overflow-hidden bg-background"
+      onDragOver={preventBrowserFileDrop}
+      onDrop={preventBrowserFileDrop}
+    >
       <Sidebar>{sidebar}</Sidebar>
       <main className="flex-1 overflow-y-auto">{children}</main>
       <FilePreviewPanel />
