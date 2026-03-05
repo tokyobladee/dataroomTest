@@ -6,18 +6,20 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { FolderTreeItem } from "./FolderTreeItem"
 import { FolderDialog } from "./FolderDialog"
+import { FileTreeItem } from "@/components/file/FileTreeItem"
 
 export function FolderTree() {
-  const { folders, activeFolderId, setActiveFolder, createFolder } = useDataroomStore()
+  const { folders, files, activeFolderId, setActiveFolder, createFolder } = useDataroomStore()
   const [createOpen, setCreateOpen] = useState(false)
 
   const rootFolders = folders.filter((f) => f.parentId === null)
+  const rootFiles = files.filter((f) => f.folderId === null)
 
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-center justify-between px-2 py-1">
         <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-          Folders
+          Explorer
         </span>
         <Button
           variant="ghost"
@@ -42,17 +44,21 @@ export function FolderTree() {
 
       <Separator className="my-1" />
 
-      {rootFolders.length === 0 ? (
-        <p className="px-2 py-2 text-xs text-muted-foreground">No folders yet</p>
-      ) : (
-        rootFolders.map((folder) => (
-          <FolderTreeItem
-            key={folder.id}
-            folder={folder}
-            depth={0}
-            allFolders={folders}
-          />
-        ))
+      {rootFolders.map((folder) => (
+        <FolderTreeItem
+          key={folder.id}
+          folder={folder}
+          depth={0}
+          allFolders={folders}
+        />
+      ))}
+
+      {rootFiles.map((file) => (
+        <FileTreeItem key={file.id} file={file} depth={0} />
+      ))}
+
+      {rootFolders.length === 0 && rootFiles.length === 0 && (
+        <p className="px-2 py-2 text-xs text-muted-foreground">No files yet</p>
       )}
 
       <FolderDialog

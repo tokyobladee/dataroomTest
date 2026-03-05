@@ -30,6 +30,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { FolderDialog } from "./FolderDialog"
+import { FileTreeItem } from "@/components/file/FileTreeItem"
 
 interface Props {
   folder: FolderType
@@ -41,6 +42,7 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
   const {
     activeFolderId,
     expandedFolderIds,
+    files,
     setActiveFolder,
     toggleFolderExpanded,
     createFolder,
@@ -53,9 +55,10 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
   const [deleteOpen, setDeleteOpen] = useState(false)
 
   const children = allFolders.filter((f) => f.parentId === folder.id)
+  const folderFiles = files.filter((f) => f.folderId === folder.id)
   const isActive = activeFolderId === folder.id
   const isExpanded = expandedFolderIds.includes(folder.id)
-  const hasChildren = children.length > 0
+  const hasChildren = children.length > 0 || folderFiles.length > 0
 
   function handleClick() {
     setActiveFolder(folder.id)
@@ -126,7 +129,7 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
         </DropdownMenu>
       </div>
 
-      {isExpanded && children.length > 0 && (
+      {isExpanded && (
         <div>
           {children.map((child) => (
             <FolderTreeItem
@@ -135,6 +138,9 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
               depth={depth + 1}
               allFolders={allFolders}
             />
+          ))}
+          {folderFiles.map((file) => (
+            <FileTreeItem key={file.id} file={file} depth={depth + 1} />
           ))}
         </div>
       )}
