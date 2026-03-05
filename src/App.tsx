@@ -3,6 +3,7 @@ import { TooltipProvider } from "@/components/ui/tooltip"
 import { Toaster } from "@/components/ui/sonner"
 import { useDataroomStore } from "@/stores/dataroomStore"
 import { DataroomSelectionPage } from "@/pages/DataroomSelectionPage"
+import { DataroomPage } from "@/pages/DataroomPage"
 
 export default function App() {
   const { loadDatarooms, activeDataroomId, isLoading } = useDataroomStore()
@@ -21,11 +22,7 @@ export default function App() {
 
   return (
     <TooltipProvider>
-      {activeDataroomId ? (
-        <div className="min-h-screen bg-background text-foreground" />
-      ) : (
-        <DataroomSelectionPage />
-      )}
+      {activeDataroomId ? <DataroomPage /> : <DataroomSelectionPage />}
       <Toaster />
     </TooltipProvider>
   )
