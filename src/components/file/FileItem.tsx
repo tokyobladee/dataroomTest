@@ -1,7 +1,8 @@
 import { useState } from "react"
-import { FileText, MoreHorizontal, Pencil, Trash2, ExternalLink } from "lucide-react"
+import { FileText, MoreHorizontal, Pencil, Trash2, ExternalLink, Check } from "lucide-react"
 import type { DataroomFile } from "@/types"
 import { useDataroomStore } from "@/stores/dataroomStore"
+import { cn } from "@/lib/utils"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,9 +28,16 @@ interface Props {
 }
 
 export function FileItem({ file }: Props) {
-  const { openFile, renameFile, deleteFile } = useDataroomStore()
+  const { openFile, renameFile, deleteFile, selectedIds, toggleSelected } = useDataroomStore()
   const [renameOpen, setRenameOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
+
+  const isSelected = selectedIds.includes(file.id)
+
+  function handleCheckbox(e: React.MouseEvent) {
+    e.stopPropagation()
+    toggleSelected(file.id)
+  }
 
   function formatSize(bytes: number) {
     if (bytes < 1024) return `${bytes} B`
@@ -48,11 +56,25 @@ export function FileItem({ file }: Props) {
   return (
     <>
       <div
-        className="group flex items-center gap-3 rounded-lg border bg-card px-4 py-3 cursor-pointer hover:border-foreground/20 hover:shadow-sm transition-all"
+        className={cn(
+          "group flex items-center gap-3 rounded-lg border bg-card px-4 py-3 cursor-pointer hover:border-foreground/20 hover:shadow-sm transition-all",
+          isSelected && "border-foreground/30 bg-accent"
+        )}
         onClick={() => openFile(file.id)}
       >
-        <div className="rounded-md bg-muted p-2 shrink-0">
-          <FileText className="h-5 w-5 text-muted-foreground" />
+        <div
+          className="relative shrink-0 cursor-pointer"
+          onClick={handleCheckbox}
+        >
+          <div className={cn(
+            "rounded-md p-2 transition-colors",
+            isSelected ? "bg-foreground" : "bg-muted"
+          )}>
+            {isSelected
+              ? <Check className="h-5 w-5 text-background" />
+              : <FileText className="h-5 w-5 text-muted-foreground" />
+            }
+          </div>
         </div>
 
         <div className="flex-1 min-w-0">

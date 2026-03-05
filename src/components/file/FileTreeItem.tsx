@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { FileText, MoreHorizontal, Pencil, Trash2 } from "lucide-react"
+import { FileText, MoreHorizontal, Pencil, Trash2, Check } from "lucide-react"
 import type { DataroomFile } from "@/types"
 import { useDataroomStore } from "@/stores/dataroomStore"
 import { cn } from "@/lib/utils"
@@ -29,22 +29,47 @@ interface Props {
 }
 
 export function FileTreeItem({ file, depth }: Props) {
-  const { openFile, renameFile, deleteFile } = useDataroomStore()
+  const { openFile, renameFile, deleteFile, selectedIds, toggleSelected } = useDataroomStore()
   const [renameOpen, setRenameOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
+
+  const isSelected = selectedIds.includes(file.id)
 
   return (
     <>
       <div
         className={cn(
-          "group flex items-center gap-1 rounded-md py-1.5 cursor-pointer select-none text-sm hover:bg-accent"
+          "group flex items-center gap-1 rounded-md py-1.5 cursor-pointer select-none text-sm hover:bg-accent",
+          isSelected && "bg-accent"
         )}
         style={{ paddingLeft: `${8 + depth * 12}px`, paddingRight: "8px" }}
         onClick={() => openFile(file.id)}
       >
         <span className="h-4 w-4 shrink-0 invisible" />
 
-        <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+        <button
+          className="relative h-4 w-4 shrink-0"
+          onClick={(e) => { e.stopPropagation(); toggleSelected(file.id) }}
+        >
+          <span className={cn(
+            "absolute inset-0 flex items-center justify-center transition-opacity text-muted-foreground",
+            "group-hover:opacity-0",
+            isSelected && "opacity-0"
+          )}>
+            <FileText className="h-4 w-4" />
+          </span>
+          <span className={cn(
+            "absolute inset-0 flex items-center justify-center transition-opacity",
+            isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+          )}>
+            <span className={cn(
+              "h-3.5 w-3.5 rounded border border-muted-foreground flex items-center justify-center",
+              isSelected && "bg-foreground border-foreground"
+            )}>
+              {isSelected && <Check className="h-2.5 w-2.5 text-background" />}
+            </span>
+          </span>
+        </button>
 
         <span className="flex-1 truncate ml-1 text-muted-foreground">{file.name}</span>
 

@@ -12,6 +12,7 @@ interface DataroomState {
   files: DataroomFile[]
   activeFolderId: string | null
   expandedFolderIds: string[]
+  selectedIds: string[]
   isLoading: boolean
 
   loadDatarooms: () => Promise<void>
@@ -30,6 +31,10 @@ interface DataroomState {
   renameFile: (id: string, name: string) => Promise<void>
   deleteFile: (id: string) => Promise<void>
   openFile: (id: string) => Promise<void>
+
+  toggleSelected: (id: string) => void
+  clearSelection: () => void
+  deleteSelected: () => Promise<void>
 }
 
 export const useDataroomStore = create<DataroomState>((set, get) => ({
@@ -39,6 +44,7 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
   files: [],
   activeFolderId: null,
   expandedFolderIds: [],
+  selectedIds: [],
   isLoading: false,
 
   loadDatarooms: async () => {
@@ -58,13 +64,13 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
     set((s) => ({
       datarooms: s.datarooms.filter((d) => d.id !== id),
       ...(s.activeDataroomId === id
-        ? { activeDataroomId: null, folders: [], files: [], activeFolderId: null, expandedFolderIds: [] }
+        ? { activeDataroomId: null, folders: [], files: [], activeFolderId: null, expandedFolderIds: [], selectedIds: [] }
         : {}),
     }))
   },
 
   setActiveDataroom: async (id: string) => {
-    set({ isLoading: true, activeDataroomId: id, activeFolderId: null, expandedFolderIds: [] })
+    set({ isLoading: true, activeDataroomId: id, activeFolderId: null, expandedFolderIds: [], selectedIds: [] })
     const [folders, files] = await Promise.all([
       getFoldersByDataroom(id),
       getFilesByDataroom(id),
@@ -73,7 +79,7 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
   },
 
   exitDataroom: () => {
-    set({ activeDataroomId: null, folders: [], files: [], activeFolderId: null, expandedFolderIds: [] })
+    set({ activeDataroomId: null, folders: [], files: [], activeFolderId: null, expandedFolderIds: [], selectedIds: [] })
   },
 
   setActiveFolder: (id: string | null) => {
@@ -136,6 +142,7 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
       files: s.files.filter((f) => f.folderId === null || !idsToDelete.has(f.folderId)),
       activeFolderId: idsToDelete.has(s.activeFolderId ?? "") ? null : s.activeFolderId,
       expandedFolderIds: s.expandedFolderIds.filter((fid) => !idsToDelete.has(fid)),
+      selectedIds: s.selectedIds.filter((sid) => !idsToDelete.has(sid)),
     }))
   },
 
@@ -170,7 +177,10 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
 
   deleteFile: async (id: string) => {
     await deleteFile(id)
-    set((s) => ({ files: s.files.filter((f) => f.id !== id) }))
+    set((s) => ({
+      files: s.files.filter((f) => f.id !== id),
+      selectedIds: s.selectedIds.filter((sid) => sid !== id),
+    }))
   },
 
   openFile: async (id: string) => {
@@ -183,6 +193,50 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
     } else {
       setTimeout(() => URL.revokeObjectURL(url), 10_000)
     }
+  },
+
+  toggleSelected: (id: string) => {
+    set((s) => ({
+      selectedIds: s.selectedIds.includes(id)
+        ? s.selectedIds.filter((sid) => sid !== id)
+        : [...s.selectedIds, id],
+    }))
+  },
+
+  clearSelection: () => {
+    set({ selectedIds: [] })
+  },
+
+  deleteSelected: async () => {
+    const { selectedIds, folders, files } = get()
+    const selectedSet = new Set(selectedIds)
+
+    const folderIdsToDelete = folders
+      .filter((f) => selectedSet.has(f.id))
+      .map((f) => f.id)
+
+    const allFolderIdsToDelete = new Set<string>()
+    for (const fid of folderIdsToDelete) {
+      allFolderIdsToDelete.add(fid)
+      collectDescendantIds(fid, folders).forEach((id) => allFolderIdsToDelete.add(id))
+    }
+
+    const fileIdsToDelete = files
+      .filter((f) => selectedSet.has(f.id) || (f.folderId !== null && allFolderIdsToDelete.has(f.folderId)))
+      .map((f) => f.id)
+
+    await Promise.all([
+      ...folderIdsToDelete.map((id) => deleteFolder(id)),
+      ...fileIdsToDelete.map((id) => deleteFile(id)),
+    ])
+
+    set((s) => ({
+      folders: s.folders.filter((f) => !allFolderIdsToDelete.has(f.id)),
+      files: s.files.filter((f) => !fileIdsToDelete.includes(f.id)),
+      activeFolderId: allFolderIdsToDelete.has(s.activeFolderId ?? "") ? null : s.activeFolderId,
+      expandedFolderIds: s.expandedFolderIds.filter((fid) => !allFolderIdsToDelete.has(fid)),
+      selectedIds: [],
+    }))
   },
 }))
 

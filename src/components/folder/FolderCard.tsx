@@ -1,7 +1,8 @@
 import { useState } from "react"
-import { Folder, MoreHorizontal, Plus, Pencil, Trash2 } from "lucide-react"
+import { Folder, MoreHorizontal, Plus, Pencil, Trash2, Check } from "lucide-react"
 import type { Folder as FolderType } from "@/types"
 import { useDataroomStore } from "@/stores/dataroomStore"
+import { cn } from "@/lib/utils"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,20 +28,41 @@ interface Props {
 }
 
 export function FolderCard({ folder }: Props) {
-  const { setActiveFolder, createFolder, renameFolder, deleteFolder } = useDataroomStore()
+  const { setActiveFolder, createFolder, renameFolder, deleteFolder, selectedIds, toggleSelected } =
+    useDataroomStore()
   const [createOpen, setCreateOpen] = useState(false)
   const [renameOpen, setRenameOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
 
+  const isSelected = selectedIds.includes(folder.id)
+
+  function handleCheckbox(e: React.MouseEvent) {
+    e.stopPropagation()
+    toggleSelected(folder.id)
+  }
+
   return (
     <>
       <div
-        className="group flex items-center gap-3 rounded-lg border bg-card px-4 py-3 cursor-pointer hover:border-foreground/20 hover:shadow-sm transition-all"
-        onDoubleClick={() => setActiveFolder(folder.id)}
+        className={cn(
+          "group flex items-center gap-3 rounded-lg border bg-card px-4 py-3 cursor-pointer hover:border-foreground/20 hover:shadow-sm transition-all",
+          isSelected && "border-foreground/30 bg-accent"
+        )}
         onClick={() => setActiveFolder(folder.id)}
       >
-        <div className="rounded-md bg-muted p-2 shrink-0">
-          <Folder className="h-5 w-5 text-muted-foreground" />
+        <div
+          className="relative shrink-0 cursor-pointer"
+          onClick={handleCheckbox}
+        >
+          <div className={cn(
+            "rounded-md p-2 transition-colors",
+            isSelected ? "bg-foreground" : "bg-muted group-hover:bg-muted"
+          )}>
+            {isSelected
+              ? <Check className="h-5 w-5 text-background" />
+              : <Folder className="h-5 w-5 text-muted-foreground" />
+            }
+          </div>
         </div>
 
         <span className="flex-1 text-sm font-medium truncate">{folder.name}</span>
