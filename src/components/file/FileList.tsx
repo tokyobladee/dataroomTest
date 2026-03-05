@@ -2,7 +2,6 @@ import { FileText, ChevronRight } from "lucide-react"
 import { useDataroomStore } from "@/stores/dataroomStore"
 import { FolderCard } from "@/components/folder/FolderCard"
 import { FileItem } from "./FileItem"
-import { FileUploadZone } from "./FileUploadZone"
 
 export function FileList() {
   const { files, folders, activeFolderId, setActiveFolder } = useDataroomStore()
@@ -55,16 +54,14 @@ export function FileList() {
         </div>
       )}
 
-      <FileUploadZone folderId={activeFolderId} />
-
       {visibleFiles.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-8 text-center">
+        <div className="flex flex-col items-center justify-center py-16 text-center">
           <div className="rounded-full bg-muted p-4 mb-3">
             <FileText className="h-6 w-6 text-muted-foreground" />
           </div>
           <p className="text-sm font-medium">No files here</p>
           <p className="text-sm text-muted-foreground mt-1">
-            Upload PDF files using the area above
+            Click the button below to upload PDF files
           </p>
         </div>
       ) : (
