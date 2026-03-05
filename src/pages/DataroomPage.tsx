@@ -1,8 +1,9 @@
 import { AppLayout } from "@/components/layout/AppLayout"
+import { FolderTree } from "@/components/folder/FolderTree"
 
 export function DataroomPage() {
   return (
-    <AppLayout sidebar={null} >
+    <AppLayout sidebar={<FolderTree />}>
       <div />
     </AppLayout>
   )
