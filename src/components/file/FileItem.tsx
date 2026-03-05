@@ -28,11 +28,13 @@ interface Props {
 }
 
 export function FileItem({ file }: Props) {
-  const { openFile, renameFile, deleteFile, selectedIds, toggleSelected } = useDataroomStore()
+  const { openFile, renameFile, deleteFile, selectedIds, toggleSelected, previewFileId, setPreviewFile } =
+    useDataroomStore()
   const [renameOpen, setRenameOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
 
   const isSelected = selectedIds.includes(file.id)
+  const isPreviewed = previewFileId === file.id
 
   function handleCheckbox(e: React.MouseEvent) {
     e.stopPropagation()
@@ -58,14 +60,12 @@ export function FileItem({ file }: Props) {
       <div
         className={cn(
           "group flex items-center gap-3 rounded-lg border bg-card px-4 py-3 cursor-pointer hover:border-foreground/20 hover:shadow-sm transition-all",
-          isSelected && "border-foreground/30 bg-accent"
+          isSelected && "border-foreground/30 bg-accent",
+          isPreviewed && "border-foreground/40 ring-1 ring-foreground/20"
         )}
-        onClick={() => openFile(file.id)}
+        onClick={() => setPreviewFile(isPreviewed ? null : file.id)}
       >
-        <div
-          className="relative shrink-0 cursor-pointer"
-          onClick={handleCheckbox}
-        >
+        <div className="relative shrink-0 cursor-pointer" onClick={handleCheckbox}>
           <div className={cn(
             "rounded-md p-2 transition-colors",
             isSelected ? "bg-foreground" : "bg-muted"

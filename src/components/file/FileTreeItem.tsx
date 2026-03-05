@@ -29,21 +29,24 @@ interface Props {
 }
 
 export function FileTreeItem({ file, depth }: Props) {
-  const { openFile, renameFile, deleteFile, selectedIds, toggleSelected } = useDataroomStore()
+  const { renameFile, deleteFile, selectedIds, toggleSelected, previewFileId, setPreviewFile } =
+    useDataroomStore()
   const [renameOpen, setRenameOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
 
   const isSelected = selectedIds.includes(file.id)
+  const isPreviewed = previewFileId === file.id
 
   return (
     <>
       <div
         className={cn(
           "group flex items-center gap-1 rounded-md py-1.5 cursor-pointer select-none text-sm hover:bg-accent",
-          isSelected && "bg-accent"
+          isSelected && "bg-accent",
+          isPreviewed && "bg-accent font-medium"
         )}
         style={{ paddingLeft: `${8 + depth * 12}px`, paddingRight: "8px" }}
-        onClick={() => openFile(file.id)}
+        onClick={() => setPreviewFile(isPreviewed ? null : file.id)}
       >
         <span className="h-4 w-4 shrink-0 invisible" />
 

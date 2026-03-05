@@ -13,6 +13,7 @@ interface DataroomState {
   activeFolderId: string | null
   expandedFolderIds: string[]
   selectedIds: string[]
+  previewFileId: string | null
   isLoading: boolean
 
   loadDatarooms: () => Promise<void>
@@ -31,6 +32,7 @@ interface DataroomState {
   renameFile: (id: string, name: string) => Promise<void>
   deleteFile: (id: string) => Promise<void>
   openFile: (id: string) => Promise<void>
+  setPreviewFile: (id: string | null) => void
 
   toggleSelected: (id: string) => void
   clearSelection: () => void
@@ -45,6 +47,7 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
   activeFolderId: null,
   expandedFolderIds: [],
   selectedIds: [],
+  previewFileId: null,
   isLoading: false,
 
   loadDatarooms: async () => {
@@ -64,13 +67,13 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
     set((s) => ({
       datarooms: s.datarooms.filter((d) => d.id !== id),
       ...(s.activeDataroomId === id
-        ? { activeDataroomId: null, folders: [], files: [], activeFolderId: null, expandedFolderIds: [], selectedIds: [] }
+        ? { activeDataroomId: null, folders: [], files: [], activeFolderId: null, expandedFolderIds: [], selectedIds: [], previewFileId: null }
         : {}),
     }))
   },
 
   setActiveDataroom: async (id: string) => {
-    set({ isLoading: true, activeDataroomId: id, activeFolderId: null, expandedFolderIds: [], selectedIds: [] })
+    set({ isLoading: true, activeDataroomId: id, activeFolderId: null, expandedFolderIds: [], selectedIds: [], previewFileId: null })
     const [folders, files] = await Promise.all([
       getFoldersByDataroom(id),
       getFilesByDataroom(id),
@@ -79,7 +82,7 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
   },
 
   exitDataroom: () => {
-    set({ activeDataroomId: null, folders: [], files: [], activeFolderId: null, expandedFolderIds: [], selectedIds: [] })
+    set({ activeDataroomId: null, folders: [], files: [], activeFolderId: null, expandedFolderIds: [], selectedIds: [], previewFileId: null })
   },
 
   setActiveFolder: (id: string | null) => {
@@ -180,6 +183,7 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
     set((s) => ({
       files: s.files.filter((f) => f.id !== id),
       selectedIds: s.selectedIds.filter((sid) => sid !== id),
+      previewFileId: s.previewFileId === id ? null : s.previewFileId,
     }))
   },
 
@@ -193,6 +197,10 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
     } else {
       setTimeout(() => URL.revokeObjectURL(url), 10_000)
     }
+  },
+
+  setPreviewFile: (id: string | null) => {
+    set({ previewFileId: id })
   },
 
   toggleSelected: (id: string) => {
@@ -211,9 +219,7 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
     const { selectedIds, folders, files } = get()
     const selectedSet = new Set(selectedIds)
 
-    const folderIdsToDelete = folders
-      .filter((f) => selectedSet.has(f.id))
-      .map((f) => f.id)
+    const folderIdsToDelete = folders.filter((f) => selectedSet.has(f.id)).map((f) => f.id)
 
     const allFolderIdsToDelete = new Set<string>()
     for (const fid of folderIdsToDelete) {
@@ -236,6 +242,7 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
       activeFolderId: allFolderIdsToDelete.has(s.activeFolderId ?? "") ? null : s.activeFolderId,
       expandedFolderIds: s.expandedFolderIds.filter((fid) => !allFolderIdsToDelete.has(fid)),
       selectedIds: [],
+      previewFileId: fileIdsToDelete.includes(s.previewFileId ?? "") ? null : s.previewFileId,
     }))
   },
 }))
