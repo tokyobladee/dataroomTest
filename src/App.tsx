@@ -2,6 +2,7 @@ import { useEffect } from "react"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { Toaster } from "@/components/ui/sonner"
 import { useDataroomStore } from "@/stores/dataroomStore"
+import { DataroomSelectionPage } from "@/pages/DataroomSelectionPage"
 
 export default function App() {
   const { loadDatarooms, activeDataroomId, isLoading } = useDataroomStore()
@@ -23,7 +24,7 @@ export default function App() {
       {activeDataroomId ? (
         <div className="min-h-screen bg-background text-foreground" />
       ) : (
-        <div className="min-h-screen bg-background text-foreground" />
+        <DataroomSelectionPage />
       )}
       <Toaster />
     </TooltipProvider>
