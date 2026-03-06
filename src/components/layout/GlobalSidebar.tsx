@@ -1,17 +1,28 @@
-import { useRef, useState } from "react"
-import { User, Upload } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
+import { User, Upload, Sun, Moon } from "lucide-react"
 import { useDataroomStore } from "@/stores/dataroomStore"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { handleDroppedFiles, isFileDrag } from "@/lib/dropFiles"
 import { getDragItem, isInternalDrag } from "@/lib/dragItem"
 import { FolderTree } from "@/components/folder/FolderTree"
+import { Button } from "@/components/ui/button"
 
 export function GlobalSidebar() {
   const { uploadFile, moveFile, moveFolder } = useDataroomStore()
   const dragCounter = useRef(0)
   const [isDragOver, setIsDragOver] = useState(false)
   const [isOsDrag, setIsOsDrag] = useState(false)
+  const [isDark, setIsDark] = useState(() => {
+    const stored = localStorage.getItem("theme")
+    if (stored) return stored === "dark"
+    return window.matchMedia("(prefers-color-scheme: dark)").matches
+  })
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", isDark)
+    localStorage.setItem("theme", isDark ? "dark" : "light")
+  }, [isDark])
 
   function handleDragEnter(e: React.DragEvent) {
     if (!isFileDrag(e) && !isInternalDrag(e)) return
@@ -61,6 +72,14 @@ export function GlobalSidebar() {
           <p className="text-sm font-medium truncate">Guest User</p>
           <p className="text-xs text-muted-foreground truncate">Local workspace</p>
         </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 shrink-0"
+          onClick={() => setIsDark((d) => !d)}
+        >
+          {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+        </Button>
       </div>
 
       <Separator />
