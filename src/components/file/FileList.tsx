@@ -1,5 +1,5 @@
 import { useRef, useState } from "react"
-import { Check, FileText, ChevronRight, Search, X, Upload } from "lucide-react"
+import { Check, FileText, ChevronRight, Search, X, Upload, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
 import { useDataroomStore } from "@/stores/dataroomStore"
 import { FolderCard } from "@/components/folder/FolderCard"
 import { FileItem } from "./FileItem"
@@ -8,19 +8,30 @@ import { getDragItem, isInternalDrag } from "@/lib/dragItem"
 import { cn } from "@/lib/utils"
 import type { Folder } from "@/types"
 
+type TypeFilter = "all" | "folders" | "files"
+type SortKey = "name" | "type" | "size" | "date"
+type SortDir = "asc" | "desc"
+
 export function FileList() {
   const { files, folders, activeFolderId, setActiveFolder, uploadFile, moveFile, moveFolder, selectedIds, selectAll, clearSelection } = useDataroomStore()
   const [isDragOver, setIsDragOver] = useState(false)
   const [isOsDrag, setIsOsDrag] = useState(false)
   const [query, setQuery] = useState("")
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all")
+  const [sortKey, setSortKey] = useState<SortKey>("name")
+  const [sortDir, setSortDir] = useState<SortDir>("asc")
   const dragCounter = useRef(0)
 
   const trimmedQuery = query.trim().toLowerCase()
   const isSearching = trimmedQuery.length > 0
 
   const activeFolder = folders.find((f) => f.id === activeFolderId) ?? null
-  const subfolders = folders.filter((f) => f.parentId === activeFolderId)
-  const visibleFiles = files.filter((f) => f.folderId === activeFolderId)
+
+  const rawSubfolders = folders.filter((f) => f.parentId === activeFolderId)
+  const rawFiles = files.filter((f) => f.folderId === activeFolderId)
+
+  const subfolders = typeFilter === "files" ? [] : sortItems(rawSubfolders, sortKey, sortDir, "folder")
+  const visibleFiles = typeFilter === "folders" ? [] : sortItems(rawFiles, sortKey, sortDir, "file")
 
   const breadcrumb = buildBreadcrumb(activeFolderId, folders)
 
@@ -30,6 +41,15 @@ export function FileList() {
   ]
   const allSelected = allVisibleIds.length > 0 && allVisibleIds.every((id) => selectedIds.includes(id))
   const someSelected = allVisibleIds.some((id) => selectedIds.includes(id))
+
+  function handleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortDir((d) => d === "asc" ? "desc" : "asc")
+    } else {
+      setSortKey(key)
+      setSortDir("asc")
+    }
+  }
 
   const searchFolders = isSearching
     ? folders.filter((f) => f.name.toLowerCase().includes(trimmedQuery))
@@ -116,7 +136,7 @@ export function FileList() {
         />
       ) : (
         <>
-          <div className="flex flex-col gap-1 shrink-0">
+          <div className="flex flex-col gap-2 shrink-0">
             <nav className="flex items-center gap-1 text-sm text-muted-foreground">
               <button
                 className="hover:text-foreground transition-colors"
@@ -136,15 +156,33 @@ export function FileList() {
                 </span>
               ))}
             </nav>
-            <div className="flex items-baseline gap-2">
-              <h2 className="text-lg font-semibold">
-                {activeFolder ? activeFolder.name : "All files"}
-              </h2>
-              <span className="text-sm text-muted-foreground">
-                {subfolders.length > 0 && `${subfolders.length} folder${subfolders.length > 1 ? "s" : ""}`}
-                {subfolders.length > 0 && visibleFiles.length > 0 && " · "}
-                {visibleFiles.length > 0 && `${visibleFiles.length} file${visibleFiles.length > 1 ? "s" : ""}`}
-              </span>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-baseline gap-2">
+                <h2 className="text-lg font-semibold">
+                  {activeFolder ? activeFolder.name : "All files"}
+                </h2>
+                <span className="text-sm text-muted-foreground">
+                  {rawSubfolders.length > 0 && `${rawSubfolders.length} folder${rawSubfolders.length > 1 ? "s" : ""}`}
+                  {rawSubfolders.length > 0 && rawFiles.length > 0 && " · "}
+                  {rawFiles.length > 0 && `${rawFiles.length} file${rawFiles.length > 1 ? "s" : ""}`}
+                </span>
+              </div>
+              <div className="flex items-center gap-1">
+                {(["all", "folders", "files"] as TypeFilter[]).map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setTypeFilter(f)}
+                    className={cn(
+                      "px-2.5 py-1 rounded-md text-xs font-medium transition-colors capitalize",
+                      typeFilter === f
+                        ? "bg-foreground text-background"
+                        : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                    )}
+                  >
+                    {f === "all" ? "All" : f === "folders" ? "Folders" : "Files"}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -161,7 +199,7 @@ export function FileList() {
               </div>
             )}
 
-            {subfolders.length === 0 && visibleFiles.length === 0 ? (
+            {rawSubfolders.length === 0 && rawFiles.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <div className="rounded-full bg-muted p-4 mb-3">
                   <FileText className="h-6 w-6 text-muted-foreground" />
@@ -190,10 +228,18 @@ export function FileList() {
                         )}
                       </button>
                     </th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wide">Name</th>
-                    <th className="w-20 px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wide">Type</th>
-                    <th className="w-24 px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wide">Size</th>
-                    <th className="w-32 px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wide">Added</th>
+                    <th className="px-3 py-2 text-left">
+                      <SortHeader label="Name" colKey="name" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+                    </th>
+                    <th className="w-20 px-3 py-2 text-left">
+                      <SortHeader label="Type" colKey="type" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+                    </th>
+                    <th className="w-24 px-3 py-2 text-left">
+                      <SortHeader label="Size" colKey="size" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+                    </th>
+                    <th className="w-32 px-3 py-2 text-left">
+                      <SortHeader label="Added" colKey="date" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+                    </th>
                     <th className="w-16 px-3 py-2" />
                   </tr>
                 </thead>
@@ -273,6 +319,57 @@ function SearchResults({ query, folders, files, allFolders, onFolderClick }: Sea
         )
       })}
     </div>
+  )
+}
+
+function sortItems<T extends { name: string; createdAt: number; size?: number }>(
+  items: T[],
+  key: SortKey,
+  dir: SortDir,
+  _itemType: "folder" | "file"
+): T[] {
+  return [...items].sort((a, b) => {
+    let cmp = 0
+    if (key === "name") {
+      cmp = a.name.localeCompare(b.name)
+    } else if (key === "size") {
+      cmp = (a.size ?? 0) - (b.size ?? 0)
+    } else if (key === "date") {
+      cmp = a.createdAt - b.createdAt
+    } else if (key === "type") {
+      cmp = a.name.localeCompare(b.name)
+    }
+    return dir === "asc" ? cmp : -cmp
+  })
+}
+
+interface SortHeaderProps {
+  label: string
+  colKey: SortKey
+  sortKey: SortKey
+  sortDir: SortDir
+  onSort: (key: SortKey) => void
+}
+
+function SortHeader({ label, colKey, sortKey, sortDir, onSort }: SortHeaderProps) {
+  const active = sortKey === colKey
+  return (
+    <button
+      className={cn(
+        "flex items-center gap-1 text-xs font-medium uppercase tracking-wide transition-colors",
+        active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+      )}
+      onClick={() => onSort(colKey)}
+    >
+      {label}
+      {active ? (
+        sortDir === "asc"
+          ? <ArrowUp className="h-3 w-3" />
+          : <ArrowDown className="h-3 w-3" />
+      ) : (
+        <ArrowUpDown className="h-3 w-3 opacity-40" />
+      )}
+    </button>
   )
 }
 
