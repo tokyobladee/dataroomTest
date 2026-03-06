@@ -2,6 +2,7 @@ import { useEffect } from "react"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { Toaster } from "@/components/ui/sonner"
 import { useDataroomStore } from "@/stores/dataroomStore"
+import { GlobalLayout } from "@/components/layout/GlobalLayout"
 import { DataroomSelectionPage } from "@/pages/DataroomSelectionPage"
 import { DataroomPage } from "@/pages/DataroomPage"
 
@@ -22,7 +23,9 @@ export default function App() {
 
   return (
     <TooltipProvider>
-      {activeDataroomId ? <DataroomPage /> : <DataroomSelectionPage />}
+      <GlobalLayout>
+        {activeDataroomId ? <DataroomPage /> : <DataroomSelectionPage />}
+      </GlobalLayout>
       <Toaster />
     </TooltipProvider>
   )
