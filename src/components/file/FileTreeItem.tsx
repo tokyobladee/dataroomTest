@@ -1,9 +1,10 @@
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { FileText, MoreHorizontal, Pencil, Trash2 } from "lucide-react"
 import type { DataroomFile } from "@/types"
 import { useDataroomStore } from "@/stores/dataroomStore"
 import { cn } from "@/lib/utils"
-import { setDragItem } from "@/lib/dragItem"
+import { setDragItem, getDragItem, isInternalDrag } from "@/lib/dragItem"
+import { handleDroppedFiles, isFileDrag } from "@/lib/dropFiles"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -30,20 +31,62 @@ interface Props {
 }
 
 export function FileTreeItem({ file, depth }: Props) {
-  const { renameFile, deleteFile, previewFileId, setPreviewFile } = useDataroomStore()
+  const { renameFile, deleteFile, previewFileId, setPreviewFile, uploadFile, moveFile, moveFolder } = useDataroomStore()
   const [renameOpen, setRenameOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [isDragOver, setIsDragOver] = useState(false)
+  const dragCounter = useRef(0)
 
   const isPreviewed = previewFileId === file.id
+  const targetFolderId = file.folderId
+
+  function handleDragEnter(e: React.DragEvent) {
+    if (!isFileDrag(e) && !isInternalDrag(e)) return
+    e.preventDefault()
+    e.stopPropagation()
+    dragCounter.current++
+    setIsDragOver(true)
+  }
+
+  function handleDragLeave(e: React.DragEvent) {
+    e.stopPropagation()
+    dragCounter.current--
+    if (dragCounter.current === 0) setIsDragOver(false)
+  }
+
+  function handleDragOver(e: React.DragEvent) {
+    if (!isFileDrag(e) && !isInternalDrag(e)) return
+    e.preventDefault()
+    e.stopPropagation()
+  }
+
+  async function handleDrop(e: React.DragEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    dragCounter.current = 0
+    setIsDragOver(false)
+    const item = getDragItem(e)
+    if (item) {
+      if (item.type === "file") await moveFile(item.id, targetFolderId)
+      else await moveFolder(item.id, targetFolderId)
+      return
+    }
+    await handleDroppedFiles(e.dataTransfer, (f) => uploadFile(f, targetFolderId))
+  }
 
   return (
     <>
       <div
         draggable
-        onDragStart={(e) => setDragItem(e, { id: file.id, type: "file" })}
+        onDragStart={(e) => { e.stopPropagation(); setDragItem(e, { id: file.id, type: "file" }) }}
+        onDragEnter={handleDragEnter}
+        onDragLeave={(e) => handleDragLeave(e)}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
         className={cn(
           "group flex items-center gap-1 rounded-md py-1.5 cursor-pointer select-none text-sm hover:bg-accent",
-          isPreviewed && "bg-accent font-medium"
+          isPreviewed && "bg-accent font-medium",
+          isDragOver && "bg-primary/10 ring-1 ring-inset ring-primary/50"
         )}
         style={{ paddingLeft: `${8 + depth * 12}px`, paddingRight: "8px" }}
         onClick={() => setPreviewFile(isPreviewed ? null : file.id)}

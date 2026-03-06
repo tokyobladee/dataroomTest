@@ -70,11 +70,13 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
   function handleDragEnter(e: React.DragEvent) {
     if (!isFileDrag(e) && !isInternalDrag(e)) return
     e.preventDefault()
+    e.stopPropagation()
     dragCounter.current++
     setIsDragOver(true)
   }
 
-  function handleDragLeave() {
+  function handleDragLeave(e: React.DragEvent) {
+    e.stopPropagation()
     dragCounter.current--
     if (dragCounter.current === 0) setIsDragOver(false)
   }
@@ -82,6 +84,7 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
   function handleDragOver(e: React.DragEvent) {
     if (!isFileDrag(e) && !isInternalDrag(e)) return
     e.preventDefault()
+    e.stopPropagation()
   }
 
   async function handleDrop(e: React.DragEvent) {
@@ -106,12 +109,12 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
         className={cn(
           "group flex items-center gap-1 rounded-md py-1.5 cursor-pointer select-none text-sm hover:bg-accent",
           isActive && "bg-accent font-medium",
-          isDragOver && "bg-accent ring-1 ring-inset ring-foreground/30"
+          isDragOver && "bg-primary/10 ring-1 ring-inset ring-primary/50"
         )}
         style={{ paddingLeft: `${8 + depth * 12}px`, paddingRight: "8px" }}
         onClick={() => setActiveFolder(folder.id)}
         onDragEnter={handleDragEnter}
-        onDragLeave={handleDragLeave}
+        onDragLeave={(e) => handleDragLeave(e)}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
       >

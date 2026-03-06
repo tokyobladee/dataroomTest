@@ -1,28 +1,29 @@
 import { useRef, useState } from "react"
-import { User } from "lucide-react"
+import { User, Upload } from "lucide-react"
 import { useDataroomStore } from "@/stores/dataroomStore"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
-import { cn } from "@/lib/utils"
 import { handleDroppedFiles, isFileDrag } from "@/lib/dropFiles"
 import { getDragItem, isInternalDrag } from "@/lib/dragItem"
 import { FolderTree } from "@/components/folder/FolderTree"
 
 export function GlobalSidebar() {
   const { uploadFile, moveFile, moveFolder } = useDataroomStore()
-  const [isDragOver, setIsDragOver] = useState(false)
   const dragCounter = useRef(0)
+  const [isDragOver, setIsDragOver] = useState(false)
+  const [isOsDrag, setIsOsDrag] = useState(false)
 
   function handleDragEnter(e: React.DragEvent) {
     if (!isFileDrag(e) && !isInternalDrag(e)) return
     e.preventDefault()
+    if (dragCounter.current === 0) setIsOsDrag(isFileDrag(e))
     dragCounter.current++
     setIsDragOver(true)
   }
 
   function handleDragLeave() {
     dragCounter.current--
-    if (dragCounter.current === 0) setIsDragOver(false)
+    if (dragCounter.current === 0) { setIsDragOver(false); setIsOsDrag(false) }
   }
 
   function handleDragOver(e: React.DragEvent) {
@@ -34,6 +35,7 @@ export function GlobalSidebar() {
     e.preventDefault()
     dragCounter.current = 0
     setIsDragOver(false)
+    setIsOsDrag(false)
     const item = getDragItem(e)
     if (item) {
       if (item.type === "file") await moveFile(item.id, null)
@@ -45,10 +47,7 @@ export function GlobalSidebar() {
 
   return (
     <aside
-      className={cn(
-        "flex flex-col w-64 shrink-0 border-r bg-background h-screen sticky top-0 transition-colors",
-        isDragOver && "bg-accent/30"
-      )}
+      className="flex flex-col w-64 shrink-0 border-r bg-background h-screen sticky top-0"
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
@@ -66,11 +65,19 @@ export function GlobalSidebar() {
 
       <Separator />
 
-      <ScrollArea className="flex-1">
-        <div className="p-2">
-          <FolderTree />
-        </div>
-      </ScrollArea>
+      <div className="relative flex-1 min-h-0">
+        {isDragOver && isOsDrag && (
+          <div className="absolute inset-0 z-20 pointer-events-none rounded-lg border-2 border-dashed border-primary bg-primary/5 flex flex-col items-center justify-center gap-2">
+            <Upload className="h-5 w-5 text-primary" />
+            <p className="text-xs font-semibold text-primary text-center px-3">Drop to add to All files</p>
+          </div>
+        )}
+        <ScrollArea className="h-full">
+          <div className="p-2">
+            <FolderTree />
+          </div>
+        </ScrollArea>
+      </div>
     </aside>
   )
 }

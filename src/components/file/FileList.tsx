@@ -1,5 +1,5 @@
 import { useRef, useState } from "react"
-import { Check, FileText, ChevronRight, Search, X } from "lucide-react"
+import { Check, FileText, ChevronRight, Search, X, Upload } from "lucide-react"
 import { useDataroomStore } from "@/stores/dataroomStore"
 import { FolderCard } from "@/components/folder/FolderCard"
 import { FileItem } from "./FileItem"
@@ -11,6 +11,7 @@ import type { Folder } from "@/types"
 export function FileList() {
   const { files, folders, activeFolderId, setActiveFolder, uploadFile, moveFile, moveFolder, selectedIds, selectAll, clearSelection } = useDataroomStore()
   const [isDragOver, setIsDragOver] = useState(false)
+  const [isOsDrag, setIsOsDrag] = useState(false)
   const [query, setQuery] = useState("")
   const dragCounter = useRef(0)
 
@@ -48,13 +49,14 @@ export function FileList() {
   function handleDragEnter(e: React.DragEvent) {
     if (!isFileDrag(e) && !isInternalDrag(e)) return
     e.preventDefault()
+    if (dragCounter.current === 0) setIsOsDrag(isFileDrag(e))
     dragCounter.current++
     setIsDragOver(true)
   }
 
   function handleDragLeave() {
     dragCounter.current--
-    if (dragCounter.current === 0) setIsDragOver(false)
+    if (dragCounter.current === 0) { setIsDragOver(false); setIsOsDrag(false) }
   }
 
   function handleDragOver(e: React.DragEvent) {
@@ -66,6 +68,7 @@ export function FileList() {
     e.preventDefault()
     dragCounter.current = 0
     setIsDragOver(false)
+    setIsOsDrag(false)
     const item = getDragItem(e)
     if (item) {
       if (item.type === "file") await moveFile(item.id, activeFolderId)
@@ -77,7 +80,7 @@ export function FileList() {
 
   return (
     <div
-      className={cn("flex flex-col h-full p-6 gap-4 transition-colors", isDragOver && "bg-accent/40")}
+      className="flex flex-col h-full p-6 gap-4"
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
@@ -113,7 +116,7 @@ export function FileList() {
         />
       ) : (
         <>
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1 shrink-0">
             <nav className="flex items-center gap-1 text-sm text-muted-foreground">
               <button
                 className="hover:text-foreground transition-colors"
@@ -165,31 +168,45 @@ export function FileList() {
             </div>
           </div>
 
-          {subfolders.length > 0 && (
-            <div className="flex flex-col gap-2">
-              {subfolders.map((folder) => (
-                <FolderCard key={folder.id} folder={folder} />
-              ))}
-            </div>
-          )}
-
-          {visibleFiles.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="rounded-full bg-muted p-4 mb-3">
-                <FileText className="h-6 w-6 text-muted-foreground" />
+          <div className="relative flex flex-col gap-2 flex-1 min-h-0">
+            {isDragOver && isOsDrag && (
+              <div className="absolute inset-0 z-20 pointer-events-none rounded-xl border-2 border-dashed border-primary bg-primary/5 flex flex-col items-center justify-center gap-3">
+                <div className="rounded-full bg-primary/10 p-4">
+                  <Upload className="h-8 w-8 text-primary" />
+                </div>
+                <p className="text-sm font-semibold text-primary">Drop PDF files here</p>
+                <p className="text-xs text-primary/70">
+                  Into &ldquo;{activeFolder ? activeFolder.name : "All files"}&rdquo;
+                </p>
               </div>
-              <p className="text-sm font-medium">No files here</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Click the button below to upload PDF files
-              </p>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-2">
-              {visibleFiles.map((file) => (
-                <FileItem key={file.id} file={file} />
-              ))}
-            </div>
-          )}
+            )}
+
+            {subfolders.length > 0 && (
+              <div className="flex flex-col gap-2">
+                {subfolders.map((folder) => (
+                  <FolderCard key={folder.id} folder={folder} />
+                ))}
+              </div>
+            )}
+
+            {visibleFiles.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="rounded-full bg-muted p-4 mb-3">
+                  <FileText className="h-6 w-6 text-muted-foreground" />
+                </div>
+                <p className="text-sm font-medium">No files here</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Click the button below to upload PDF files
+                </p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {visibleFiles.map((file) => (
+                  <FileItem key={file.id} file={file} />
+                ))}
+              </div>
+            )}
+          </div>
         </>
       )}
     </div>

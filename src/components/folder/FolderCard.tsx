@@ -48,11 +48,13 @@ export function FolderCard({ folder }: Props) {
   function handleDragEnter(e: React.DragEvent) {
     if (!isFileDrag(e) && !isInternalDrag(e)) return
     e.preventDefault()
+    e.stopPropagation()
     dragCounter.current++
     setIsDragOver(true)
   }
 
-  function handleDragLeave() {
+  function handleDragLeave(e: React.DragEvent) {
+    e.stopPropagation()
     dragCounter.current--
     if (dragCounter.current === 0) setIsDragOver(false)
   }
@@ -60,6 +62,7 @@ export function FolderCard({ folder }: Props) {
   function handleDragOver(e: React.DragEvent) {
     if (!isFileDrag(e) && !isInternalDrag(e)) return
     e.preventDefault()
+    e.stopPropagation()
   }
 
   async function handleDrop(e: React.DragEvent) {
@@ -84,11 +87,11 @@ export function FolderCard({ folder }: Props) {
         className={cn(
           "group flex items-center gap-3 rounded-lg border bg-card px-4 py-3 cursor-pointer hover:border-foreground/20 hover:shadow-sm transition-all",
           isSelected && "border-foreground/30 bg-accent",
-          isDragOver && "border-foreground/40 bg-accent shadow-sm"
+          isDragOver && "border-primary bg-primary/5 shadow-md ring-2 ring-primary/20"
         )}
         onClick={() => setActiveFolder(folder.id)}
         onDragEnter={handleDragEnter}
-        onDragLeave={handleDragLeave}
+        onDragLeave={(e) => handleDragLeave(e)}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
       >
