@@ -75,20 +75,6 @@ export function FolderTree() {
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
-      <div className="flex items-center justify-between px-2 py-1">
-        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-          Folders
-        </span>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-5 w-5"
-          onClick={() => setCreateOpen(true)}
-        >
-          <Plus className="h-3.5 w-3.5" />
-        </Button>
-      </div>
-
       {/* Root "All files" row — stops propagation so GlobalSidebar overlay hides when hovering here */}
       <div
         className={cn(
@@ -105,6 +91,20 @@ export function FolderTree() {
         <span className="h-4 w-4 shrink-0 invisible" />
         <Home className="h-4 w-4 shrink-0 text-muted-foreground" />
         <span className="flex-1 truncate ml-1">All files</span>
+      </div>
+
+      <div className="flex items-center justify-between px-2 py-1 mt-1">
+        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          Folders
+        </span>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-5 w-5"
+          onClick={() => setCreateOpen(true)}
+        >
+          <Plus className="h-3.5 w-3.5" />
+        </Button>
       </div>
 
       {rootFolders.map((folder) => (
