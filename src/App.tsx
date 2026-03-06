@@ -2,15 +2,22 @@ import { useEffect } from "react"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { Toaster } from "@/components/ui/sonner"
 import { useDataroomStore } from "@/stores/dataroomStore"
+import { useAuthStore } from "@/stores/authStore"
 import { GlobalLayout } from "@/components/layout/GlobalLayout"
 import { DataroomPage } from "@/pages/DataroomPage"
+import { LoginPage } from "@/components/auth/LoginPage"
 
 export default function App() {
   const { initDataroom, isLoading } = useDataroomStore()
+  const { user } = useAuthStore()
 
   useEffect(() => {
-    initDataroom()
-  }, [initDataroom])
+    if (user) initDataroom()
+  }, [user, initDataroom])
+
+  if (!user) {
+    return <LoginPage />
+  }
 
   if (isLoading) {
     return (

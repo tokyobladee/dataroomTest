@@ -1,15 +1,24 @@
 import { useEffect, useRef, useState } from "react"
-import { User, Upload, Sun, Moon } from "lucide-react"
+import { User, Upload, Sun, Moon, LogOut } from "lucide-react"
 import { useDataroomStore } from "@/stores/dataroomStore"
+import { useAuthStore } from "@/stores/authStore"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { handleDroppedFiles, isFileDrag } from "@/lib/dropFiles"
 import { getDragItem, isInternalDrag } from "@/lib/dragItem"
 import { FolderTree } from "@/components/folder/FolderTree"
 import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 export function GlobalSidebar() {
   const { uploadFile, moveFile, moveFolder } = useDataroomStore()
+  const { user, logout } = useAuthStore()
   const dragCounter = useRef(0)
   const [isDragOver, setIsDragOver] = useState(false)
   const [isOsDrag, setIsOsDrag] = useState(false)
@@ -64,14 +73,32 @@ export function GlobalSidebar() {
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
-      <div className="flex items-center gap-3 px-3 h-14 shrink-0">
-        <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center shrink-0">
-          <User className="h-4 w-4 text-muted-foreground" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium truncate">Guest User</p>
-          <p className="text-xs text-muted-foreground truncate">Local workspace</p>
-        </div>
+      <div className="flex items-center gap-2 px-3 h-14 shrink-0">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="flex items-center gap-2.5 flex-1 min-w-0 rounded-md px-1 py-1 hover:bg-accent transition-colors text-left">
+              <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center shrink-0">
+                <User className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{user?.name ?? "Guest"}</p>
+                <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+              </div>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-52">
+            <div className="px-2 py-1.5">
+              <p className="text-sm font-medium truncate">{user?.name}</p>
+              <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+            </div>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={logout} className="text-destructive focus:text-destructive">
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         <Button
           variant="ghost"
           size="icon"
