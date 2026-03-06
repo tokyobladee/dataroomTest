@@ -5,15 +5,16 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 import { handleDroppedFiles, isFileDrag } from "@/lib/dropFiles"
+import { getDragItem, isInternalDrag } from "@/lib/dragItem"
 import { FolderTree } from "@/components/folder/FolderTree"
 
 export function GlobalSidebar() {
-  const { uploadFile } = useDataroomStore()
+  const { uploadFile, moveFile, moveFolder } = useDataroomStore()
   const [isDragOver, setIsDragOver] = useState(false)
   const dragCounter = useRef(0)
 
   function handleDragEnter(e: React.DragEvent) {
-    if (!isFileDrag(e)) return
+    if (!isFileDrag(e) && !isInternalDrag(e)) return
     e.preventDefault()
     dragCounter.current++
     setIsDragOver(true)
@@ -25,7 +26,7 @@ export function GlobalSidebar() {
   }
 
   function handleDragOver(e: React.DragEvent) {
-    if (!isFileDrag(e)) return
+    if (!isFileDrag(e) && !isInternalDrag(e)) return
     e.preventDefault()
   }
 
@@ -33,6 +34,12 @@ export function GlobalSidebar() {
     e.preventDefault()
     dragCounter.current = 0
     setIsDragOver(false)
+    const item = getDragItem(e)
+    if (item) {
+      if (item.type === "file") await moveFile(item.id, null)
+      else await moveFolder(item.id, null)
+      return
+    }
     await handleDroppedFiles(e.dataTransfer, (file) => uploadFile(file, null))
   }
 

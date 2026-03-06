@@ -3,6 +3,7 @@ import { FileText, MoreHorizontal, Pencil, Trash2, ExternalLink, Check } from "l
 import type { DataroomFile } from "@/types"
 import { useDataroomStore } from "@/stores/dataroomStore"
 import { cn } from "@/lib/utils"
+import { setDragItem } from "@/lib/dragItem"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -58,6 +59,8 @@ export function FileItem({ file }: Props) {
   return (
     <>
       <div
+        draggable
+        onDragStart={(e) => setDragItem(e, { id: file.id, type: "file" })}
         className={cn(
           "group flex items-center gap-3 rounded-lg border bg-card px-4 py-3 cursor-pointer hover:border-foreground/20 hover:shadow-sm transition-all",
           isSelected && "border-foreground/30 bg-accent",

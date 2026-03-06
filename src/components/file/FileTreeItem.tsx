@@ -3,6 +3,7 @@ import { FileText, MoreHorizontal, Pencil, Trash2 } from "lucide-react"
 import type { DataroomFile } from "@/types"
 import { useDataroomStore } from "@/stores/dataroomStore"
 import { cn } from "@/lib/utils"
+import { setDragItem } from "@/lib/dragItem"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -38,6 +39,8 @@ export function FileTreeItem({ file, depth }: Props) {
   return (
     <>
       <div
+        draggable
+        onDragStart={(e) => setDragItem(e, { id: file.id, type: "file" })}
         className={cn(
           "group flex items-center gap-1 rounded-md py-1.5 cursor-pointer select-none text-sm hover:bg-accent",
           isPreviewed && "bg-accent font-medium"

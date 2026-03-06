@@ -4,6 +4,7 @@ import type { Folder as FolderType } from "@/types"
 import { useDataroomStore } from "@/stores/dataroomStore"
 import { cn } from "@/lib/utils"
 import { handleDroppedFiles, isFileDrag } from "@/lib/dropFiles"
+import { setDragItem, getDragItem, isInternalDrag } from "@/lib/dragItem"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,7 +30,7 @@ interface Props {
 }
 
 export function FolderCard({ folder }: Props) {
-  const { setActiveFolder, createFolder, renameFolder, deleteFolder, selectedIds, toggleSelected, uploadFile } =
+  const { setActiveFolder, createFolder, renameFolder, deleteFolder, moveFolder, moveFile, selectedIds, toggleSelected, uploadFile } =
     useDataroomStore()
   const [createOpen, setCreateOpen] = useState(false)
   const [renameOpen, setRenameOpen] = useState(false)
@@ -45,7 +46,7 @@ export function FolderCard({ folder }: Props) {
   }
 
   function handleDragEnter(e: React.DragEvent) {
-    if (!isFileDrag(e)) return
+    if (!isFileDrag(e) && !isInternalDrag(e)) return
     e.preventDefault()
     dragCounter.current++
     setIsDragOver(true)
@@ -57,7 +58,7 @@ export function FolderCard({ folder }: Props) {
   }
 
   function handleDragOver(e: React.DragEvent) {
-    if (!isFileDrag(e)) return
+    if (!isFileDrag(e) && !isInternalDrag(e)) return
     e.preventDefault()
   }
 
@@ -66,12 +67,20 @@ export function FolderCard({ folder }: Props) {
     e.stopPropagation()
     dragCounter.current = 0
     setIsDragOver(false)
+    const item = getDragItem(e)
+    if (item) {
+      if (item.type === "file") await moveFile(item.id, folder.id)
+      else if (item.id !== folder.id) await moveFolder(item.id, folder.id)
+      return
+    }
     await handleDroppedFiles(e.dataTransfer, (file) => uploadFile(file, folder.id))
   }
 
   return (
     <>
       <div
+        draggable
+        onDragStart={(e) => { e.stopPropagation(); setDragItem(e, { id: folder.id, type: "folder" }) }}
         className={cn(
           "group flex items-center gap-3 rounded-lg border bg-card px-4 py-3 cursor-pointer hover:border-foreground/20 hover:shadow-sm transition-all",
           isSelected && "border-foreground/30 bg-accent",

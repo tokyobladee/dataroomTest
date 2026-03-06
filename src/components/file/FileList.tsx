@@ -4,11 +4,12 @@ import { useDataroomStore } from "@/stores/dataroomStore"
 import { FolderCard } from "@/components/folder/FolderCard"
 import { FileItem } from "./FileItem"
 import { handleDroppedFiles, isFileDrag } from "@/lib/dropFiles"
+import { getDragItem, isInternalDrag } from "@/lib/dragItem"
 import { cn } from "@/lib/utils"
 import type { Folder } from "@/types"
 
 export function FileList() {
-  const { files, folders, activeFolderId, setActiveFolder, uploadFile, selectedIds, selectAll, clearSelection } = useDataroomStore()
+  const { files, folders, activeFolderId, setActiveFolder, uploadFile, moveFile, moveFolder, selectedIds, selectAll, clearSelection } = useDataroomStore()
   const [isDragOver, setIsDragOver] = useState(false)
   const [query, setQuery] = useState("")
   const dragCounter = useRef(0)
@@ -45,7 +46,7 @@ export function FileList() {
   }
 
   function handleDragEnter(e: React.DragEvent) {
-    if (!isFileDrag(e)) return
+    if (!isFileDrag(e) && !isInternalDrag(e)) return
     e.preventDefault()
     dragCounter.current++
     setIsDragOver(true)
@@ -57,7 +58,7 @@ export function FileList() {
   }
 
   function handleDragOver(e: React.DragEvent) {
-    if (!isFileDrag(e)) return
+    if (!isFileDrag(e) && !isInternalDrag(e)) return
     e.preventDefault()
   }
 
@@ -65,6 +66,12 @@ export function FileList() {
     e.preventDefault()
     dragCounter.current = 0
     setIsDragOver(false)
+    const item = getDragItem(e)
+    if (item) {
+      if (item.type === "file") await moveFile(item.id, activeFolderId)
+      else await moveFolder(item.id, activeFolderId)
+      return
+    }
     await handleDroppedFiles(e.dataTransfer, (file) => uploadFile(file, activeFolderId))
   }
 

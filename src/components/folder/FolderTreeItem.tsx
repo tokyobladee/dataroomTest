@@ -32,6 +32,7 @@ import {
 import { FolderDialog } from "./FolderDialog"
 import { FileTreeItem } from "@/components/file/FileTreeItem"
 import { handleDroppedFiles, isFileDrag } from "@/lib/dropFiles"
+import { setDragItem, getDragItem, isInternalDrag } from "@/lib/dragItem"
 
 interface Props {
   folder: FolderType
@@ -47,6 +48,8 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
     setActiveFolder,
     toggleFolderExpanded,
     createFolder,
+    moveFolder,
+    moveFile,
     renameFolder,
     deleteFolder,
     uploadFile,
@@ -65,7 +68,7 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
   const hasChildren = children.length > 0 || folderFiles.length > 0
 
   function handleDragEnter(e: React.DragEvent) {
-    if (!isFileDrag(e)) return
+    if (!isFileDrag(e) && !isInternalDrag(e)) return
     e.preventDefault()
     dragCounter.current++
     setIsDragOver(true)
@@ -77,7 +80,7 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
   }
 
   function handleDragOver(e: React.DragEvent) {
-    if (!isFileDrag(e)) return
+    if (!isFileDrag(e) && !isInternalDrag(e)) return
     e.preventDefault()
   }
 
@@ -86,12 +89,20 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
     e.stopPropagation()
     dragCounter.current = 0
     setIsDragOver(false)
+    const item = getDragItem(e)
+    if (item) {
+      if (item.type === "file") await moveFile(item.id, folder.id)
+      else if (item.id !== folder.id) await moveFolder(item.id, folder.id)
+      return
+    }
     await handleDroppedFiles(e.dataTransfer, (file) => uploadFile(file, folder.id))
   }
 
   return (
     <div>
       <div
+        draggable
+        onDragStart={(e) => { e.stopPropagation(); setDragItem(e, { id: folder.id, type: "folder" }) }}
         className={cn(
           "group flex items-center gap-1 rounded-md py-1.5 cursor-pointer select-none text-sm hover:bg-accent",
           isActive && "bg-accent font-medium",

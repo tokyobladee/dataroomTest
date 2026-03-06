@@ -21,10 +21,12 @@ interface DataroomState {
   setActiveFolder: (id: string | null) => void
   toggleFolderExpanded: (id: string) => void
   createFolder: (name: string, parentId: string | null) => Promise<void>
+  moveFolder: (id: string, parentId: string | null) => Promise<void>
   renameFolder: (id: string, name: string) => Promise<void>
   deleteFolder: (id: string) => Promise<void>
 
   uploadFile: (file: File, folderId: string | null) => Promise<void>
+  moveFile: (id: string, folderId: string | null) => Promise<void>
   renameFile: (id: string, name: string) => Promise<void>
   deleteFile: (id: string) => Promise<void>
   openFile: (id: string) => Promise<void>
@@ -100,6 +102,17 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
     }))
   },
 
+  moveFolder: async (id: string, parentId: string | null) => {
+    const { folders } = get()
+    const folder = folders.find((f) => f.id === id)
+    if (!folder || folder.parentId === parentId) return
+    const descendants = collectDescendantIds(id, folders)
+    if (parentId !== null && (parentId === id || descendants.has(parentId))) return
+    const updated = { ...folder, parentId }
+    await updateFolder(updated)
+    set((s) => ({ folders: s.folders.map((f) => (f.id === id ? updated : f)) }))
+  },
+
   renameFolder: async (id: string, name: string) => {
     const folder = get().folders.find((f) => f.id === id)
     if (!folder) return
@@ -139,6 +152,14 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
     }
     await createFile(record, file)
     set((s) => ({ files: [...s.files, record] }))
+  },
+
+  moveFile: async (id: string, folderId: string | null) => {
+    const file = get().files.find((f) => f.id === id)
+    if (!file || file.folderId === folderId) return
+    const updated = { ...file, folderId }
+    await updateFile(updated)
+    set((s) => ({ files: s.files.map((f) => (f.id === id ? updated : f)) }))
   },
 
   renameFile: async (id: string, name: string) => {
