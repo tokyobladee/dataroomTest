@@ -24,6 +24,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { RenameFileDialog } from "./RenameFileDialog"
+import { toast } from "sonner"
 
 interface Props {
   file: DataroomFile
@@ -128,7 +129,7 @@ export function FileTreeItem({ file, depth }: Props) {
         open={renameOpen}
         initialValue={file.name}
         onClose={() => setRenameOpen(false)}
-        onConfirm={(name) => renameFile(file.id, name)}
+        onConfirm={(name) => { renameFile(file.id, name); toast.success("File renamed") }}
       />
 
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
@@ -143,7 +144,7 @@ export function FileTreeItem({ file, depth }: Props) {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
-              onClick={() => deleteFile(file.id)}
+              onClick={() => { deleteFile(file.id); toast.success(`"${file.name}" deleted`) }}
             >
               Delete
             </AlertDialogAction>

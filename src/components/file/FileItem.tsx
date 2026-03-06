@@ -4,6 +4,7 @@ import type { DataroomFile } from "@/types"
 import { useDataroomStore } from "@/stores/dataroomStore"
 import { cn } from "@/lib/utils"
 import { setDragItem } from "@/lib/dragItem"
+import { toast } from "sonner"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -130,7 +131,7 @@ export function FileItem({ file }: Props) {
         open={renameOpen}
         initialValue={file.name}
         onClose={() => setRenameOpen(false)}
-        onConfirm={(name) => renameFile(file.id, name)}
+        onConfirm={(name) => { renameFile(file.id, name); toast.success("File renamed") }}
       />
 
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
@@ -145,7 +146,7 @@ export function FileItem({ file }: Props) {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
-              onClick={() => deleteFile(file.id)}
+              onClick={() => { deleteFile(file.id); toast.success(`"${file.name}" deleted`) }}
             >
               Delete
             </AlertDialogAction>

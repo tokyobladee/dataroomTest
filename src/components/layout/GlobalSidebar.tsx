@@ -8,6 +8,7 @@ import { handleDroppedFiles, isFileDrag } from "@/lib/dropFiles"
 import { getDragItem, isInternalDrag } from "@/lib/dragItem"
 import { FolderTree } from "@/components/folder/FolderTree"
 import { Button } from "@/components/ui/button"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -94,15 +95,20 @@ export function GlobalSidebar() {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-          className="h-7 w-7 shrink-0"
-          onClick={() => setIsDark((d) => !d)}
-        >
-          {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+              className="h-7 w-7 shrink-0"
+              onClick={() => setIsDark((d) => !d)}
+            >
+              {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="right">{isDark ? "Light mode" : "Dark mode"}</TooltipContent>
+        </Tooltip>
       </div>
 
       <Separator />

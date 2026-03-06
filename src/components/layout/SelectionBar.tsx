@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Trash2, X } from "lucide-react"
 import { useDataroomStore } from "@/stores/dataroomStore"
 import { Button } from "@/components/ui/button"
+import { toast } from "sonner"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,13 +29,15 @@ export function SelectionBar({ confirmOpen: externalOpen, onConfirmOpenChange }:
   if (selectedIds.length === 0) return null
 
   async function handleDelete() {
+    const count = selectedIds.length
     await deleteSelected()
     setConfirmOpen(false)
+    toast.success(`${count} item${count > 1 ? "s" : ""} deleted`)
   }
 
   return (
     <>
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-xl border bg-card shadow-lg px-4 py-3">
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-xl border bg-card shadow-lg px-4 py-3 mr-20">
         <span className="text-sm font-medium">
           {selectedIds.length} selected
         </span>

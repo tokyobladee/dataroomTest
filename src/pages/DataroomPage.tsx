@@ -5,8 +5,13 @@ import { UploadFab } from "@/components/file/UploadFab"
 import { useDataroomStore } from "@/stores/dataroomStore"
 
 export function DataroomPage() {
-  const { selectedIds, clearSelection, setPreviewFile } = useDataroomStore()
+  const { selectedIds, clearSelection, setPreviewFile, activeFolderId, folders } = useDataroomStore()
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+
+  useEffect(() => {
+    const folder = folders.find((f) => f.id === activeFolderId)
+    document.title = folder ? `${folder.name} — Dataroom` : "Dataroom"
+  }, [activeFolderId, folders])
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {

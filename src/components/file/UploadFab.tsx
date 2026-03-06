@@ -3,6 +3,7 @@ import { Upload, Loader2 } from "lucide-react"
 import { useDataroomStore } from "@/stores/dataroomStore"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
 export function UploadFab() {
   const { uploadFile, activeFolderId } = useDataroomStore()
@@ -35,20 +36,25 @@ export function UploadFab() {
 
   return (
     <>
-      <button
-        aria-label="Upload files"
-        className={cn(
-          "fixed bottom-6 right-6 z-40 h-14 w-14 rounded-full bg-foreground text-background shadow-lg flex items-center justify-center transition-all hover:scale-105 active:scale-95",
-          uploading && "cursor-not-allowed opacity-70"
-        )}
-        disabled={uploading}
-        onClick={() => inputRef.current?.click()}
-      >
-        {uploading
-          ? <Loader2 className="h-6 w-6 animate-spin" />
-          : <Upload className="h-6 w-6" />
-        }
-      </button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            aria-label="Upload files"
+            className={cn(
+              "fixed bottom-6 right-6 z-40 h-14 w-14 rounded-full bg-foreground text-background shadow-lg flex items-center justify-center transition-all hover:scale-105 active:scale-95",
+              uploading && "cursor-not-allowed opacity-70"
+            )}
+            disabled={uploading}
+            onClick={() => inputRef.current?.click()}
+          >
+            {uploading
+              ? <Loader2 className="h-6 w-6 animate-spin" />
+              : <Upload className="h-6 w-6" />
+            }
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="left">Upload PDF files</TooltipContent>
+      </Tooltip>
       <input
         ref={inputRef}
         type="file"

@@ -4,6 +4,7 @@ import { useDataroomStore } from "@/stores/dataroomStore"
 import { getFileBlob } from "@/db/files"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 
 const MIN_WIDTH = 280
@@ -97,22 +98,34 @@ export function FilePreviewPanel() {
           <FileText className="h-4 w-4 text-muted-foreground" />
         </div>
         <span className="flex-1 text-sm font-medium truncate">{file.name}</span>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 shrink-0"
-          onClick={() => openFile(file.id)}
-        >
-          <ExternalLink className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 shrink-0"
-          onClick={() => setPreviewFile(null)}
-        >
-          <X className="h-4 w-4" />
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Open in new tab"
+              className="h-7 w-7 shrink-0"
+              onClick={() => openFile(file.id)}
+            >
+              <ExternalLink className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Open in new tab</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Close preview"
+              className="h-7 w-7 shrink-0"
+              onClick={() => setPreviewFile(null)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Close preview</TooltipContent>
+        </Tooltip>
       </div>
 
       <Separator />

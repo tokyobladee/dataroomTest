@@ -11,6 +11,7 @@ import {
 import type { Folder as FolderType } from "@/types"
 import { useDataroomStore } from "@/stores/dataroomStore"
 import { cn } from "@/lib/utils"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -138,6 +139,12 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
 
         <span className="flex-1 truncate ml-1">{folder.name}</span>
 
+        {hasChildren && (
+          <span className="text-xs text-muted-foreground/60 shrink-0 group-hover:hidden">
+            {children.length + folderFiles.length}
+          </span>
+        )}
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
             <Button
@@ -189,14 +196,14 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
         open={createOpen}
         mode="create"
         onClose={() => setCreateOpen(false)}
-        onConfirm={(name) => createFolder(name, folder.id)}
+        onConfirm={(name) => { createFolder(name, folder.id); toast.success(`Folder "${name}" created`) }}
       />
       <FolderDialog
         open={renameOpen}
         mode="rename"
         initialValue={folder.name}
         onClose={() => setRenameOpen(false)}
-        onConfirm={(name) => renameFolder(folder.id, name)}
+        onConfirm={(name) => { renameFolder(folder.id, name); toast.success("Folder renamed") }}
       />
 
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
@@ -211,7 +218,7 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
-              onClick={() => deleteFolder(folder.id)}
+              onClick={() => { deleteFolder(folder.id); toast.success(`"${folder.name}" deleted`) }}
             >
               Delete
             </AlertDialogAction>

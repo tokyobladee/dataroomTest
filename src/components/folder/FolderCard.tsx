@@ -3,6 +3,7 @@ import { Folder, MoreHorizontal, Plus, Pencil, Trash2, Check, ChevronRight } fro
 import type { Folder as FolderType } from "@/types"
 import { useDataroomStore } from "@/stores/dataroomStore"
 import { cn } from "@/lib/utils"
+import { toast } from "sonner"
 import { handleDroppedFiles, isFileDrag } from "@/lib/dropFiles"
 import { setDragItem, getDragItem, isInternalDrag } from "@/lib/dragItem"
 import {
@@ -89,11 +90,10 @@ export function FolderCard({ folder }: Props) {
         draggable
         onDragStart={(e) => { e.stopPropagation(); setDragItem(e, { id: folder.id, type: "folder" }) }}
         className={cn(
-          "group border-b cursor-pointer transition-colors hover:bg-accent/50",
+          "group border-b transition-colors hover:bg-accent/50",
           isSelected && "bg-accent",
           isDragOver && "bg-primary/15"
         )}
-        onClick={() => setActiveFolder(folder.id)}
         onDragEnter={handleDragEnter}
         onDragLeave={(e) => handleDragLeave(e)}
         onDragOver={handleDragOver}
@@ -110,7 +110,7 @@ export function FolderCard({ folder }: Props) {
             )}
           </button>
         </td>
-        <td className="px-3 py-2.5">
+        <td className="px-3 py-2.5 cursor-pointer" onClick={() => setActiveFolder(folder.id)}>
           <div className="flex items-center gap-2">
             <Folder className="h-4 w-4 shrink-0 text-muted-foreground" />
             <span className="font-medium truncate">{folder.name}</span>
@@ -156,7 +156,7 @@ export function FolderCard({ folder }: Props) {
         open={createOpen}
         mode="create"
         onClose={() => setCreateOpen(false)}
-        onConfirm={(name) => createFolder(name, folder.id)}
+        onConfirm={(name) => { createFolder(name, folder.id); toast.success(`Folder "${name}" created`) }}
       />
 
       <FolderDialog
@@ -164,7 +164,7 @@ export function FolderCard({ folder }: Props) {
         mode="rename"
         initialValue={folder.name}
         onClose={() => setRenameOpen(false)}
-        onConfirm={(name) => renameFolder(folder.id, name)}
+        onConfirm={(name) => { renameFolder(folder.id, name); toast.success("Folder renamed") }}
       />
 
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
@@ -179,7 +179,7 @@ export function FolderCard({ folder }: Props) {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
-              onClick={() => deleteFolder(folder.id)}
+              onClick={() => { deleteFolder(folder.id); toast.success(`"${folder.name}" deleted`) }}
             >
               Delete
             </AlertDialogAction>
