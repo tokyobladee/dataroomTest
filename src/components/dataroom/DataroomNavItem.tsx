@@ -27,10 +27,11 @@ interface Props {
 }
 
 export function DataroomNavItem({ dataroom }: Props) {
-  const { activeDataroomId, setActiveDataroom, deleteDataroom } = useDataroomStore()
+  const { activeDataroomId, expandedDataroomIds, setActiveDataroom, toggleDataroomExpanded, deleteDataroom } = useDataroomStore()
   const [deleteOpen, setDeleteOpen] = useState(false)
 
   const isActive = activeDataroomId === dataroom.id
+  const isExpanded = expandedDataroomIds.includes(dataroom.id)
 
   async function handleClick() {
     if (!isActive) {
@@ -47,12 +48,15 @@ export function DataroomNavItem({ dataroom }: Props) {
         )}
         onClick={handleClick}
       >
-        <span className={cn(
-          "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
-          isActive && "rotate-90"
-        )}>
+        <button
+          className={cn(
+            "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
+            isExpanded && "rotate-90"
+          )}
+          onClick={(e) => { e.stopPropagation(); toggleDataroomExpanded(dataroom.id) }}
+        >
           <ChevronRight className="h-4 w-4" />
-        </span>
+        </button>
 
         <Database className="h-4 w-4 shrink-0 text-muted-foreground" />
 
@@ -80,7 +84,7 @@ export function DataroomNavItem({ dataroom }: Props) {
         </DropdownMenu>
       </div>
 
-      {isActive && (
+      {isExpanded && (
         <div className="pl-3">
           <FolderTree />
         </div>

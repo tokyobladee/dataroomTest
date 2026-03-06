@@ -8,6 +8,7 @@ import { nanoid } from "@/lib/nanoid"
 interface DataroomState {
   datarooms: Dataroom[]
   activeDataroomId: string | null
+  expandedDataroomIds: string[]
   folders: Folder[]
   files: DataroomFile[]
   activeFolderId: string | null
@@ -20,6 +21,7 @@ interface DataroomState {
   createDataroom: (name: string) => Promise<void>
   deleteDataroom: (id: string) => Promise<void>
   setActiveDataroom: (id: string) => Promise<void>
+  toggleDataroomExpanded: (id: string) => void
   exitDataroom: () => void
 
   setActiveFolder: (id: string | null) => void
@@ -43,6 +45,7 @@ interface DataroomState {
 export const useDataroomStore = create<DataroomState>((set, get) => ({
   datarooms: [],
   activeDataroomId: null,
+  expandedDataroomIds: [],
   folders: [],
   files: [],
   activeFolderId: null,
@@ -67,6 +70,7 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
     await deleteDataroom(id)
     set((s) => ({
       datarooms: s.datarooms.filter((d) => d.id !== id),
+      expandedDataroomIds: s.expandedDataroomIds.filter((did) => did !== id),
       ...(s.activeDataroomId === id
         ? { activeDataroomId: null, folders: [], files: [], activeFolderId: null, expandedFolderIds: [], selectedIds: [], previewFileId: null }
         : {}),
@@ -74,12 +78,31 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
   },
 
   setActiveDataroom: async (id: string) => {
-    set({ isLoading: true, activeDataroomId: id, activeFolderId: null, expandedFolderIds: [], selectedIds: [], previewFileId: null })
+    set((s) => ({
+      activeDataroomId: id,
+      expandedDataroomIds: s.expandedDataroomIds.includes(id)
+        ? s.expandedDataroomIds
+        : [...s.expandedDataroomIds, id],
+      folders: [],
+      files: [],
+      activeFolderId: null,
+      expandedFolderIds: [],
+      selectedIds: [],
+      previewFileId: null,
+    }))
     const [folders, files] = await Promise.all([
       getFoldersByDataroom(id),
       getFilesByDataroom(id),
     ])
-    set({ folders, files, isLoading: false })
+    set({ folders, files })
+  },
+
+  toggleDataroomExpanded: (id: string) => {
+    set((s) => ({
+      expandedDataroomIds: s.expandedDataroomIds.includes(id)
+        ? s.expandedDataroomIds.filter((did) => did !== id)
+        : [...s.expandedDataroomIds, id],
+    }))
   },
 
   exitDataroom: () => {

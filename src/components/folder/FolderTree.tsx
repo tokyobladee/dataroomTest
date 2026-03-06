@@ -1,15 +1,13 @@
 import { useState } from "react"
-import { Plus, Home } from "lucide-react"
+import { Plus } from "lucide-react"
 import { useDataroomStore } from "@/stores/dataroomStore"
-import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
 import { FolderTreeItem } from "./FolderTreeItem"
 import { FolderDialog } from "./FolderDialog"
 import { FileTreeItem } from "@/components/file/FileTreeItem"
 
 export function FolderTree() {
-  const { folders, files, activeFolderId, setActiveFolder, createFolder } = useDataroomStore()
+  const { folders, files, createFolder } = useDataroomStore()
   const [createOpen, setCreateOpen] = useState(false)
 
   const rootFolders = folders.filter((f) => f.parentId === null)
@@ -19,7 +17,7 @@ export function FolderTree() {
     <div className="flex flex-col gap-1">
       <div className="flex items-center justify-between px-2 py-1">
         <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-          Explorer
+          Folders
         </span>
         <Button
           variant="ghost"
@@ -30,19 +28,6 @@ export function FolderTree() {
           <Plus className="h-3.5 w-3.5" />
         </Button>
       </div>
-
-      <div
-        className={cn(
-          "flex items-center gap-2 rounded-md px-2 py-1.5 cursor-pointer text-sm hover:bg-accent select-none",
-          activeFolderId === null && "bg-accent font-medium"
-        )}
-        onClick={() => setActiveFolder(null)}
-      >
-        <Home className="h-4 w-4 shrink-0 text-muted-foreground ml-5" />
-        <span>All files</span>
-      </div>
-
-      <Separator className="my-1" />
 
       {rootFolders.map((folder) => (
         <FolderTreeItem
