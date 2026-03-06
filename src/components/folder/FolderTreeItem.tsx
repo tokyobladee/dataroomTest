@@ -7,7 +7,6 @@ import {
   Plus,
   Pencil,
   Trash2,
-  Check,
 } from "lucide-react"
 import type { Folder as FolderType } from "@/types"
 import { useDataroomStore } from "@/stores/dataroomStore"
@@ -44,11 +43,9 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
   const {
     activeFolderId,
     expandedFolderIds,
-    selectedIds,
     files,
     setActiveFolder,
     toggleFolderExpanded,
-    toggleSelected,
     createFolder,
     renameFolder,
     deleteFolder,
@@ -65,7 +62,6 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
   const folderFiles = files.filter((f) => f.folderId === folder.id)
   const isActive = activeFolderId === folder.id
   const isExpanded = expandedFolderIds.includes(folder.id)
-  const isSelected = selectedIds.includes(folder.id)
   const hasChildren = children.length > 0 || folderFiles.length > 0
 
   function handleDragEnter(e: React.DragEvent) {
@@ -98,7 +94,7 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
       <div
         className={cn(
           "group flex items-center gap-1 rounded-md py-1.5 cursor-pointer select-none text-sm hover:bg-accent",
-          (isActive || isSelected) && "bg-accent font-medium",
+          isActive && "bg-accent font-medium",
           isDragOver && "bg-accent ring-1 ring-inset ring-foreground/30"
         )}
         style={{ paddingLeft: `${8 + depth * 12}px`, paddingRight: "8px" }}
@@ -119,32 +115,12 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
           <ChevronRight className="h-4 w-4" />
         </button>
 
-        <button
-          className="relative h-4 w-4 shrink-0"
-          onClick={(e) => { e.stopPropagation(); toggleSelected(folder.id) }}
-        >
-          <span className={cn(
-            "absolute inset-0 flex items-center justify-center transition-opacity text-muted-foreground",
-            "group-hover:opacity-0",
-            isSelected && "opacity-0"
-          )}>
-            {isActive || isExpanded
-              ? <FolderOpen className="h-4 w-4" />
-              : <Folder className="h-4 w-4" />
-            }
-          </span>
-          <span className={cn(
-            "absolute inset-0 flex items-center justify-center transition-opacity",
-            isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-          )}>
-            <span className={cn(
-              "h-3.5 w-3.5 rounded border border-muted-foreground flex items-center justify-center",
-              isSelected && "bg-foreground border-foreground"
-            )}>
-              {isSelected && <Check className="h-2.5 w-2.5 text-background" />}
-            </span>
-          </span>
-        </button>
+        <span className="shrink-0 text-muted-foreground">
+          {isExpanded || isActive
+            ? <FolderOpen className="h-4 w-4" />
+            : <Folder className="h-4 w-4" />
+          }
+        </span>
 
         <span className="flex-1 truncate ml-1">{folder.name}</span>
 

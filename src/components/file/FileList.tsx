@@ -1,5 +1,5 @@
 import { useRef, useState } from "react"
-import { FileText, ChevronRight } from "lucide-react"
+import { Check, FileText, ChevronRight } from "lucide-react"
 import { useDataroomStore } from "@/stores/dataroomStore"
 import { FolderCard } from "@/components/folder/FolderCard"
 import { FileItem } from "./FileItem"
@@ -7,7 +7,7 @@ import { handleDroppedFiles, isFileDrag } from "@/lib/dropFiles"
 import { cn } from "@/lib/utils"
 
 export function FileList() {
-  const { files, folders, activeFolderId, setActiveFolder, uploadFile } = useDataroomStore()
+  const { files, folders, activeFolderId, setActiveFolder, uploadFile, selectedIds, selectAll, clearSelection } = useDataroomStore()
   const [isDragOver, setIsDragOver] = useState(false)
   const dragCounter = useRef(0)
 
@@ -16,6 +16,21 @@ export function FileList() {
   const visibleFiles = files.filter((f) => f.folderId === activeFolderId)
 
   const breadcrumb = buildBreadcrumb(activeFolderId, folders)
+
+  const allVisibleIds = [
+    ...subfolders.map((f) => f.id),
+    ...visibleFiles.map((f) => f.id),
+  ]
+  const allSelected = allVisibleIds.length > 0 && allVisibleIds.every((id) => selectedIds.includes(id))
+  const someSelected = allVisibleIds.some((id) => selectedIds.includes(id))
+
+  function toggleSelectAll() {
+    if (allSelected) {
+      clearSelection()
+    } else {
+      selectAll(allVisibleIds)
+    }
+  }
 
   function handleDragEnter(e: React.DragEvent) {
     if (!isFileDrag(e)) return
@@ -69,15 +84,35 @@ export function FileList() {
             </span>
           ))}
         </nav>
-        <div className="flex items-baseline gap-2">
-          <h2 className="text-lg font-semibold">
-            {activeFolder ? activeFolder.name : "All files"}
-          </h2>
-          <span className="text-sm text-muted-foreground">
-            {subfolders.length > 0 && `${subfolders.length} folder${subfolders.length > 1 ? "s" : ""}`}
-            {subfolders.length > 0 && visibleFiles.length > 0 && " · "}
-            {visibleFiles.length > 0 && `${visibleFiles.length} file${visibleFiles.length > 1 ? "s" : ""}`}
-          </span>
+        <div className="flex items-center gap-3">
+          {allVisibleIds.length > 0 && (
+            <button
+              className="shrink-0 flex items-center justify-center"
+              onClick={toggleSelectAll}
+            >
+              {allSelected ? (
+                <span className="h-4 w-4 rounded bg-foreground border border-foreground flex items-center justify-center">
+                  <Check className="h-2.5 w-2.5 text-background" />
+                </span>
+              ) : someSelected ? (
+                <span className="h-4 w-4 rounded border border-foreground bg-foreground/20 flex items-center justify-center">
+                  <span className="h-1.5 w-2.5 rounded-sm bg-foreground" />
+                </span>
+              ) : (
+                <span className="h-4 w-4 rounded border border-muted-foreground/40 flex items-center justify-center hover:border-muted-foreground" />
+              )}
+            </button>
+          )}
+          <div className="flex items-baseline gap-2">
+            <h2 className="text-lg font-semibold">
+              {activeFolder ? activeFolder.name : "All files"}
+            </h2>
+            <span className="text-sm text-muted-foreground">
+              {subfolders.length > 0 && `${subfolders.length} folder${subfolders.length > 1 ? "s" : ""}`}
+              {subfolders.length > 0 && visibleFiles.length > 0 && " · "}
+              {visibleFiles.length > 0 && `${visibleFiles.length} file${visibleFiles.length > 1 ? "s" : ""}`}
+            </span>
+          </div>
         </div>
       </div>
 

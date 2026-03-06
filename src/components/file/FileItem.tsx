@@ -65,16 +65,18 @@ export function FileItem({ file }: Props) {
         )}
         onClick={() => setPreviewFile(isPreviewed ? null : file.id)}
       >
-        <div className="relative shrink-0 cursor-pointer" onClick={handleCheckbox}>
-          <div className={cn(
-            "rounded-md p-2 transition-colors",
-            isSelected ? "bg-foreground" : "bg-muted"
-          )}>
-            {isSelected
-              ? <Check className="h-5 w-5 text-background" />
-              : <FileText className="h-5 w-5 text-muted-foreground" />
-            }
-          </div>
+        <button className="shrink-0 flex items-center justify-center" onClick={handleCheckbox}>
+          {isSelected ? (
+            <span className="h-4 w-4 rounded bg-foreground border border-foreground flex items-center justify-center">
+              <Check className="h-2.5 w-2.5 text-background" />
+            </span>
+          ) : (
+            <span className="h-4 w-4 rounded border border-muted-foreground/40 flex items-center justify-center group-hover:border-muted-foreground" />
+          )}
+        </button>
+
+        <div className="rounded-md bg-muted p-2 shrink-0">
+          <FileText className="h-5 w-5 text-muted-foreground" />
         </div>
 
         <div className="flex-1 min-w-0">

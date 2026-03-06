@@ -35,6 +35,7 @@ interface DataroomState {
   setPreviewFile: (id: string | null) => void
 
   toggleSelected: (id: string) => void
+  selectAll: (ids: string[]) => void
   clearSelection: () => void
   deleteSelected: () => Promise<void>
 }
@@ -209,6 +210,10 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
         ? s.selectedIds.filter((sid) => sid !== id)
         : [...s.selectedIds, id],
     }))
+  },
+
+  selectAll: (ids: string[]) => {
+    set({ selectedIds: ids })
   },
 
   clearSelection: () => {
