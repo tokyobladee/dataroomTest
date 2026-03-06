@@ -136,39 +136,19 @@ export function FileList() {
                 </span>
               ))}
             </nav>
-            <div className="flex items-center gap-3">
-              {allVisibleIds.length > 0 && (
-                <button
-                  className="shrink-0 flex items-center justify-center"
-                  onClick={toggleSelectAll}
-                >
-                  {allSelected ? (
-                    <span className="h-4 w-4 rounded bg-foreground border border-foreground flex items-center justify-center">
-                      <Check className="h-2.5 w-2.5 text-background" />
-                    </span>
-                  ) : someSelected ? (
-                    <span className="h-4 w-4 rounded border border-foreground bg-foreground/20 flex items-center justify-center">
-                      <span className="h-1.5 w-2.5 rounded-sm bg-foreground" />
-                    </span>
-                  ) : (
-                    <span className="h-4 w-4 rounded border border-muted-foreground/40 flex items-center justify-center hover:border-muted-foreground" />
-                  )}
-                </button>
-              )}
-              <div className="flex items-baseline gap-2">
-                <h2 className="text-lg font-semibold">
-                  {activeFolder ? activeFolder.name : "All files"}
-                </h2>
-                <span className="text-sm text-muted-foreground">
-                  {subfolders.length > 0 && `${subfolders.length} folder${subfolders.length > 1 ? "s" : ""}`}
-                  {subfolders.length > 0 && visibleFiles.length > 0 && " · "}
-                  {visibleFiles.length > 0 && `${visibleFiles.length} file${visibleFiles.length > 1 ? "s" : ""}`}
-                </span>
-              </div>
+            <div className="flex items-baseline gap-2">
+              <h2 className="text-lg font-semibold">
+                {activeFolder ? activeFolder.name : "All files"}
+              </h2>
+              <span className="text-sm text-muted-foreground">
+                {subfolders.length > 0 && `${subfolders.length} folder${subfolders.length > 1 ? "s" : ""}`}
+                {subfolders.length > 0 && visibleFiles.length > 0 && " · "}
+                {visibleFiles.length > 0 && `${visibleFiles.length} file${visibleFiles.length > 1 ? "s" : ""}`}
+              </span>
             </div>
           </div>
 
-          <div className="relative flex flex-col gap-2 flex-1 min-h-0">
+          <div className="relative flex flex-col flex-1 min-h-0 overflow-auto">
             {isDragOver && isOsDrag && (
               <div className="absolute inset-0 z-20 pointer-events-none rounded-xl border-2 border-dashed border-primary bg-primary/5 flex flex-col items-center justify-center gap-3">
                 <div className="rounded-full bg-primary/10 p-4">
@@ -181,15 +161,7 @@ export function FileList() {
               </div>
             )}
 
-            {subfolders.length > 0 && (
-              <div className="flex flex-col gap-2">
-                {subfolders.map((folder) => (
-                  <FolderCard key={folder.id} folder={folder} />
-                ))}
-              </div>
-            )}
-
-            {visibleFiles.length === 0 ? (
+            {subfolders.length === 0 && visibleFiles.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <div className="rounded-full bg-muted p-4 mb-3">
                   <FileText className="h-6 w-6 text-muted-foreground" />
@@ -200,11 +172,40 @@ export function FileList() {
                 </p>
               </div>
             ) : (
-              <div className="flex flex-col gap-2">
-                {visibleFiles.map((file) => (
-                  <FileItem key={file.id} file={file} />
-                ))}
-              </div>
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr className="border-b">
+                    <th className="w-10 px-3 py-2">
+                      <button className="flex items-center justify-center" onClick={toggleSelectAll}>
+                        {allSelected ? (
+                          <span className="h-4 w-4 rounded bg-foreground border border-foreground flex items-center justify-center">
+                            <Check className="h-2.5 w-2.5 text-background" />
+                          </span>
+                        ) : someSelected ? (
+                          <span className="h-4 w-4 rounded border border-foreground bg-foreground/20 flex items-center justify-center">
+                            <span className="h-1.5 w-2.5 rounded-sm bg-foreground" />
+                          </span>
+                        ) : (
+                          <span className="h-4 w-4 rounded border border-muted-foreground/40 flex items-center justify-center hover:border-muted-foreground" />
+                        )}
+                      </button>
+                    </th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wide">Name</th>
+                    <th className="w-20 px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wide">Type</th>
+                    <th className="w-24 px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wide">Size</th>
+                    <th className="w-32 px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wide">Added</th>
+                    <th className="w-16 px-3 py-2" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {subfolders.map((folder) => (
+                    <FolderCard key={folder.id} folder={folder} />
+                  ))}
+                  {visibleFiles.map((file) => (
+                    <FileItem key={file.id} file={file} />
+                  ))}
+                </tbody>
+              </table>
             )}
           </div>
         </>

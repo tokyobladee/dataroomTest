@@ -58,74 +58,74 @@ export function FileItem({ file }: Props) {
 
   return (
     <>
-      <div
+      <tr
         draggable
-        onDragStart={(e) => setDragItem(e, { id: file.id, type: "file" })}
+        onDragStart={(e) => { e.stopPropagation(); setDragItem(e, { id: file.id, type: "file" }) }}
         className={cn(
-          "group flex items-center gap-3 rounded-lg border bg-card px-4 py-3 cursor-pointer hover:border-foreground/20 hover:shadow-sm transition-all",
-          isSelected && "border-foreground/30 bg-accent",
-          isPreviewed && "border-foreground/40 ring-1 ring-foreground/20"
+          "group border-b cursor-pointer transition-colors hover:bg-accent/50",
+          isSelected && "bg-accent",
+          isPreviewed && "bg-accent/70"
         )}
         onClick={() => setPreviewFile(isPreviewed ? null : file.id)}
       >
-        <button className="shrink-0 flex items-center justify-center" onClick={handleCheckbox}>
-          {isSelected ? (
-            <span className="h-4 w-4 rounded bg-foreground border border-foreground flex items-center justify-center">
-              <Check className="h-2.5 w-2.5 text-background" />
-            </span>
-          ) : (
-            <span className="h-4 w-4 rounded border border-muted-foreground/40 flex items-center justify-center group-hover:border-muted-foreground" />
-          )}
-        </button>
-
-        <div className="rounded-md bg-muted p-2 shrink-0">
-          <FileText className="h-5 w-5 text-muted-foreground" />
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium truncate">{file.name}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {formatSize(file.size)} · {formatDate(file.createdAt)}
-          </p>
-        </div>
-
-        <div className="flex items-center gap-1 shrink-0">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-            onClick={(e) => { e.stopPropagation(); openFile(file.id) }}
-          >
-            <ExternalLink className="h-4 w-4" />
-          </Button>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-              <DropdownMenuItem onClick={() => setRenameOpen(true)}>
-                <Pencil className="h-4 w-4 mr-2" />
-                Rename
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                className="text-destructive focus:text-destructive"
-                onClick={() => setDeleteOpen(true)}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
+        <td className="px-3 py-2.5 w-10">
+          <button className="flex items-center justify-center" onClick={handleCheckbox}>
+            {isSelected ? (
+              <span className="h-4 w-4 rounded bg-foreground border border-foreground flex items-center justify-center">
+                <Check className="h-2.5 w-2.5 text-background" />
+              </span>
+            ) : (
+              <span className="h-4 w-4 rounded border border-muted-foreground/40 flex items-center justify-center group-hover:border-muted-foreground" />
+            )}
+          </button>
+        </td>
+        <td className="px-3 py-2.5">
+          <div className="flex items-center gap-2">
+            <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <span className="font-medium truncate">{file.name}</span>
+          </div>
+        </td>
+        <td className="px-3 py-2.5 text-xs text-muted-foreground">PDF</td>
+        <td className="px-3 py-2.5 text-xs text-muted-foreground">{formatSize(file.size)}</td>
+        <td className="px-3 py-2.5 text-xs text-muted-foreground">{formatDate(file.createdAt)}</td>
+        <td className="px-3 py-2.5 text-right">
+          <div className="flex items-center justify-end gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={(e) => { e.stopPropagation(); openFile(file.id) }}
+            >
+              <ExternalLink className="h-4 w-4" />
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                <DropdownMenuItem onClick={() => setRenameOpen(true)}>
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Rename
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive"
+                  onClick={() => setDeleteOpen(true)}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </td>
+      </tr>
 
       <RenameFileDialog
         open={renameOpen}
