@@ -1,17 +1,14 @@
 import { useRef, useState } from "react"
-import { Plus, User } from "lucide-react"
+import { User } from "lucide-react"
 import { useDataroomStore } from "@/stores/dataroomStore"
-import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 import { handleDroppedFiles, isFileDrag } from "@/lib/dropFiles"
-import { DataroomNavItem } from "@/components/dataroom/DataroomNavItem"
-import { CreateDataroomDialog } from "@/components/dataroom/CreateDataroomDialog"
+import { FolderTree } from "@/components/folder/FolderTree"
 
 export function GlobalSidebar() {
-  const { datarooms, createDataroom, activeDataroomId, uploadFile } = useDataroomStore()
-  const [createOpen, setCreateOpen] = useState(false)
+  const { uploadFile } = useDataroomStore()
   const [isDragOver, setIsDragOver] = useState(false)
   const dragCounter = useRef(0)
 
@@ -36,7 +33,6 @@ export function GlobalSidebar() {
     e.preventDefault()
     dragCounter.current = 0
     setIsDragOver(false)
-    if (!activeDataroomId) return
     await handleDroppedFiles(e.dataTransfer, (file) => uploadFile(file, null))
   }
 
@@ -65,35 +61,9 @@ export function GlobalSidebar() {
 
       <ScrollArea className="flex-1">
         <div className="p-2">
-          <div className="flex items-center justify-between px-2 py-1">
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              Datarooms
-            </span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-5 w-5"
-              onClick={() => setCreateOpen(true)}
-            >
-              <Plus className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-
-          {datarooms.length === 0 ? (
-            <p className="px-2 py-2 text-xs text-muted-foreground">No datarooms yet</p>
-          ) : (
-            datarooms.map((dr) => (
-              <DataroomNavItem key={dr.id} dataroom={dr} />
-            ))
-          )}
+          <FolderTree />
         </div>
       </ScrollArea>
-
-      <CreateDataroomDialog
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
-        onCreate={createDataroom}
-      />
     </aside>
   )
 }

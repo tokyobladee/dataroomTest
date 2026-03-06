@@ -3,15 +3,14 @@ import { TooltipProvider } from "@/components/ui/tooltip"
 import { Toaster } from "@/components/ui/sonner"
 import { useDataroomStore } from "@/stores/dataroomStore"
 import { GlobalLayout } from "@/components/layout/GlobalLayout"
-import { DataroomSelectionPage } from "@/pages/DataroomSelectionPage"
 import { DataroomPage } from "@/pages/DataroomPage"
 
 export default function App() {
-  const { loadDatarooms, activeDataroomId, isLoading } = useDataroomStore()
+  const { initDataroom, isLoading } = useDataroomStore()
 
   useEffect(() => {
-    loadDatarooms()
-  }, [loadDatarooms])
+    initDataroom()
+  }, [initDataroom])
 
   if (isLoading) {
     return (
@@ -24,7 +23,7 @@ export default function App() {
   return (
     <TooltipProvider>
       <GlobalLayout>
-        {activeDataroomId ? <DataroomPage /> : <DataroomSelectionPage />}
+        <DataroomPage />
       </GlobalLayout>
       <Toaster />
     </TooltipProvider>

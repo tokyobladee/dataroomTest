@@ -1,14 +1,13 @@
 import { create } from "zustand"
-import { getAllDatarooms, createDataroom, deleteDataroom } from "@/db/datarooms"
+import { getAllDatarooms, createDataroom } from "@/db/datarooms"
 import { getFoldersByDataroom, createFolder, updateFolder, deleteFolder } from "@/db/folders"
 import { getFilesByDataroom, createFile, updateFile, deleteFile, getFileBlob } from "@/db/files"
-import type { Dataroom, DataroomFile, Folder } from "@/types"
+import type { DataroomFile, Folder } from "@/types"
 import { nanoid } from "@/lib/nanoid"
 
+const DATAROOM_ID = "default"
+
 interface DataroomState {
-  datarooms: Dataroom[]
-  activeDataroomId: string | null
-  expandedDataroomIds: string[]
   folders: Folder[]
   files: DataroomFile[]
   activeFolderId: string | null
@@ -17,12 +16,7 @@ interface DataroomState {
   previewFileId: string | null
   isLoading: boolean
 
-  loadDatarooms: () => Promise<void>
-  createDataroom: (name: string) => Promise<void>
-  deleteDataroom: (id: string) => Promise<void>
-  setActiveDataroom: (id: string) => Promise<void>
-  toggleDataroomExpanded: (id: string) => void
-  exitDataroom: () => void
+  initDataroom: () => Promise<void>
 
   setActiveFolder: (id: string | null) => void
   toggleFolderExpanded: (id: string) => void
@@ -43,9 +37,6 @@ interface DataroomState {
 }
 
 export const useDataroomStore = create<DataroomState>((set, get) => ({
-  datarooms: [],
-  activeDataroomId: null,
-  expandedDataroomIds: [],
   folders: [],
   files: [],
   activeFolderId: null,
@@ -54,59 +45,17 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
   previewFileId: null,
   isLoading: false,
 
-  loadDatarooms: async () => {
+  initDataroom: async () => {
     set({ isLoading: true })
-    const datarooms = await getAllDatarooms()
-    set({ datarooms, isLoading: false })
-  },
-
-  createDataroom: async (name: string) => {
-    const dataroom: Dataroom = { id: nanoid(), name, createdAt: Date.now() }
-    await createDataroom(dataroom)
-    set((s) => ({ datarooms: [...s.datarooms, dataroom] }))
-  },
-
-  deleteDataroom: async (id: string) => {
-    await deleteDataroom(id)
-    set((s) => ({
-      datarooms: s.datarooms.filter((d) => d.id !== id),
-      expandedDataroomIds: s.expandedDataroomIds.filter((did) => did !== id),
-      ...(s.activeDataroomId === id
-        ? { activeDataroomId: null, folders: [], files: [], activeFolderId: null, expandedFolderIds: [], selectedIds: [], previewFileId: null }
-        : {}),
-    }))
-  },
-
-  setActiveDataroom: async (id: string) => {
-    set((s) => ({
-      activeDataroomId: id,
-      expandedDataroomIds: s.expandedDataroomIds.includes(id)
-        ? s.expandedDataroomIds
-        : [...s.expandedDataroomIds, id],
-      folders: [],
-      files: [],
-      activeFolderId: null,
-      expandedFolderIds: [],
-      selectedIds: [],
-      previewFileId: null,
-    }))
+    const existing = await getAllDatarooms()
+    if (existing.length === 0) {
+      await createDataroom({ id: DATAROOM_ID, name: "My Dataroom", createdAt: Date.now() })
+    }
     const [folders, files] = await Promise.all([
-      getFoldersByDataroom(id),
-      getFilesByDataroom(id),
+      getFoldersByDataroom(DATAROOM_ID),
+      getFilesByDataroom(DATAROOM_ID),
     ])
-    set({ folders, files })
-  },
-
-  toggleDataroomExpanded: (id: string) => {
-    set((s) => ({
-      expandedDataroomIds: s.expandedDataroomIds.includes(id)
-        ? s.expandedDataroomIds.filter((did) => did !== id)
-        : [...s.expandedDataroomIds, id],
-    }))
-  },
-
-  exitDataroom: () => {
-    set({ activeDataroomId: null, folders: [], files: [], activeFolderId: null, expandedFolderIds: [], selectedIds: [], previewFileId: null })
+    set({ folders, files, isLoading: false })
   },
 
   setActiveFolder: (id: string | null) => {
@@ -130,15 +79,14 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
   },
 
   createFolder: async (name: string, parentId: string | null) => {
-    const { activeDataroomId, folders } = get()
-    if (!activeDataroomId) return
+    const { folders } = get()
 
-    const siblings = folders.filter((f) => f.parentId === parentId && f.dataroomId === activeDataroomId)
+    const siblings = folders.filter((f) => f.parentId === parentId && f.dataroomId === DATAROOM_ID)
     const uniqueName = resolveUniqueName(name, siblings.map((f) => f.name))
 
     const folder: Folder = {
       id: nanoid(),
-      dataroomId: activeDataroomId,
+      dataroomId: DATAROOM_ID,
       parentId,
       name: uniqueName,
       createdAt: Date.now(),
@@ -174,16 +122,15 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
   },
 
   uploadFile: async (file: File, folderId: string | null) => {
-    const { activeDataroomId, files } = get()
-    if (!activeDataroomId) return
+    const { files } = get()
 
     const baseName = file.name.replace(/\.pdf$/i, "")
-    const siblings = files.filter((f) => f.folderId === folderId && f.dataroomId === activeDataroomId)
+    const siblings = files.filter((f) => f.folderId === folderId && f.dataroomId === DATAROOM_ID)
     const uniqueName = resolveUniqueName(baseName, siblings.map((f) => f.name))
 
     const record: DataroomFile = {
       id: nanoid(),
-      dataroomId: activeDataroomId,
+      dataroomId: DATAROOM_ID,
       folderId,
       name: uniqueName,
       size: file.size,
