@@ -53,7 +53,11 @@ export function DataroomNavItem({ dataroom }: Props) {
             "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
             isExpanded && "rotate-90"
           )}
-          onClick={(e) => { e.stopPropagation(); toggleDataroomExpanded(dataroom.id) }}
+          onClick={async (e) => {
+            e.stopPropagation()
+            if (!isActive) await setActiveDataroom(dataroom.id)
+            else toggleDataroomExpanded(dataroom.id)
+          }}
         >
           <ChevronRight className="h-4 w-4" />
         </button>
