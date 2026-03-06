@@ -8,15 +8,20 @@ import { cn } from "@/lib/utils"
 
 const MIN_WIDTH = 280
 const MAX_WIDTH = 900
+const DEFAULT_WIDTH = 900
 
 export function FilePreviewPanel() {
   const { previewFileId, files, setPreviewFile, openFile } = useDataroomStore()
   const [blobUrl, setBlobUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [width, setWidth] = useState(MAX_WIDTH)
+  const [width, setWidth] = useState(() => {
+    const stored = localStorage.getItem("previewWidth")
+    return stored ? Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, parseInt(stored))) : DEFAULT_WIDTH
+  })
   const [dragging, setDragging] = useState(false)
   const dragStartX = useRef(0)
   const dragStartWidth = useRef(0)
+  const currentWidth = useRef(width)
 
   const file = files.find((f) => f.id === previewFileId) ?? null
 
@@ -48,11 +53,13 @@ export function FilePreviewPanel() {
     function onMouseMove(e: MouseEvent) {
       const delta = dragStartX.current - e.clientX
       const next = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, dragStartWidth.current + delta))
+      currentWidth.current = next
       setWidth(next)
     }
 
     function onMouseUp() {
       setDragging(false)
+      localStorage.setItem("previewWidth", String(currentWidth.current))
     }
 
     document.addEventListener("mousemove", onMouseMove)

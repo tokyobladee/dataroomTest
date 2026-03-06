@@ -1,5 +1,5 @@
 import { useRef, useState } from "react"
-import { Check, FileText, ChevronRight, Search, X, Upload, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
+import { Check, FileText, Folder as FolderIcon, ChevronRight, Search, X, Upload, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
 import { useDataroomStore } from "@/stores/dataroomStore"
 import { FolderCard } from "@/components/folder/FolderCard"
 import { FileItem } from "./FileItem"
@@ -9,11 +9,11 @@ import { cn } from "@/lib/utils"
 import type { Folder } from "@/types"
 
 type TypeFilter = "all" | "folders" | "files"
-type SortKey = "name" | "type" | "size" | "date"
+type SortKey = "name" | "size" | "date"
 type SortDir = "asc" | "desc"
 
 export function FileList() {
-  const { files, folders, activeFolderId, setActiveFolder, uploadFile, moveFile, moveFolder, selectedIds, selectAll, clearSelection } = useDataroomStore()
+  const { files, folders, activeFolderId, setActiveFolder, uploadFile, moveFile, moveFolder, selectedIds, selectAll, clearSelection, setPreviewFile, isLoading } = useDataroomStore()
   const [isDragOver, setIsDragOver] = useState(false)
   const [isOsDrag, setIsOsDrag] = useState(false)
   const [query, setQuery] = useState("")
@@ -98,6 +98,14 @@ export function FileList() {
     await handleDroppedFiles(e.dataTransfer, (file) => uploadFile(file, activeFolderId))
   }
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
+      </div>
+    )
+  }
+
   return (
     <div
       className="flex flex-col h-full p-6 gap-4"
@@ -111,6 +119,7 @@ export function FileList() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
         <input
           type="text"
+          aria-label="Search files and folders"
           placeholder="Search files and folders…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -118,6 +127,7 @@ export function FileList() {
         />
         {query && (
           <button
+            aria-label="Clear search"
             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             onClick={() => setQuery("")}
           >
@@ -133,6 +143,7 @@ export function FileList() {
           files={searchFiles}
           allFolders={folders}
           onFolderClick={(id) => { setQuery(""); setActiveFolder(id) }}
+          onFileClick={(id) => { setQuery(""); setPreviewFile(id) }}
         />
       ) : (
         <>
@@ -213,7 +224,7 @@ export function FileList() {
               <table className="w-full text-sm border-collapse">
                 <thead>
                   <tr className="border-b sticky top-0 bg-background z-10">
-                    <th className="w-10 px-3 py-2">
+                    <th scope="col" className="w-10 px-3 py-2">
                       <button className="flex items-center justify-center" onClick={toggleSelectAll}>
                         {allSelected ? (
                           <span className="h-4 w-4 rounded bg-foreground border border-foreground flex items-center justify-center">
@@ -228,16 +239,16 @@ export function FileList() {
                         )}
                       </button>
                     </th>
-                    <th className="px-3 py-2 text-left">
+                    <th scope="col" className="px-3 py-2 text-left" aria-sort={sortKey === "name" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}>
                       <SortHeader label="Name" colKey="name" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
                     </th>
-                    <th className="w-24 px-3 py-2 text-left">
+                    <th scope="col" className="w-24 px-3 py-2 text-left" aria-sort={sortKey === "size" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}>
                       <SortHeader label="Size" colKey="size" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
                     </th>
-                    <th className="w-32 px-3 py-2 text-left">
+                    <th scope="col" className="w-32 px-3 py-2 text-left" aria-sort={sortKey === "date" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}>
                       <SortHeader label="Added" colKey="date" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
                     </th>
-                    <th className="w-16 px-3 py-2" />
+                    <th scope="col" className="w-16 px-3 py-2" />
                   </tr>
                 </thead>
                 <tbody>
@@ -263,9 +274,10 @@ interface SearchResultsProps {
   files: ReturnType<typeof useDataroomStore.getState>["files"]
   allFolders: Folder[]
   onFolderClick: (id: string) => void
+  onFileClick: (id: string) => void
 }
 
-function SearchResults({ query, folders, files, allFolders, onFolderClick }: SearchResultsProps) {
+function SearchResults({ query, folders, files, allFolders, onFolderClick, onFileClick }: SearchResultsProps) {
   const total = folders.length + files.length
 
   if (total === 0) {
@@ -292,7 +304,7 @@ function SearchResults({ query, folders, files, allFolders, onFolderClick }: Sea
             className="flex items-center gap-3 rounded-md px-3 py-2 text-sm hover:bg-accent text-left"
             onClick={() => onFolderClick(folder.id)}
           >
-            <span className="text-muted-foreground">📁</span>
+            <FolderIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
             <span className="flex-1 min-w-0">
               <span className="font-medium truncate block">{folder.name}</span>
               {path && <span className="text-xs text-muted-foreground truncate block">{path}</span>}
@@ -303,16 +315,17 @@ function SearchResults({ query, folders, files, allFolders, onFolderClick }: Sea
       {files.map((file) => {
         const path = buildPathString(file.folderId, allFolders)
         return (
-          <div
+          <button
             key={file.id}
-            className="flex items-center gap-3 rounded-md px-3 py-2 text-sm"
+            className="flex items-center gap-3 rounded-md px-3 py-2 text-sm hover:bg-accent text-left w-full"
+            onClick={() => onFileClick(file.id)}
           >
-            <span className="text-muted-foreground">📄</span>
+            <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
             <span className="flex-1 min-w-0">
               <span className="font-medium truncate block">{file.name}</span>
               {path && <span className="text-xs text-muted-foreground truncate block">{path}</span>}
             </span>
-          </div>
+          </button>
         )
       })}
     </div>
@@ -333,8 +346,6 @@ function sortItems<T extends { name: string; createdAt: number; size?: number }>
       cmp = (a.size ?? 0) - (b.size ?? 0)
     } else if (key === "date") {
       cmp = a.createdAt - b.createdAt
-    } else if (key === "type") {
-      cmp = a.name.localeCompare(b.name)
     }
     return dir === "asc" ? cmp : -cmp
   })

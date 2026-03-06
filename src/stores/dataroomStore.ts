@@ -62,13 +62,14 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
 
   setActiveFolder: (id: string | null) => {
     if (id === null) {
-      set({ activeFolderId: null })
+      set({ activeFolderId: null, previewFileId: null })
       return
     }
     const ancestors = getAncestorIds(id, get().folders)
     set((s) => ({
       activeFolderId: id,
       expandedFolderIds: Array.from(new Set([...s.expandedFolderIds, ...ancestors, id])),
+      previewFileId: null,
     }))
   },
 

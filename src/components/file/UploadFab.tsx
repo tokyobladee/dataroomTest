@@ -36,6 +36,7 @@ export function UploadFab() {
   return (
     <>
       <button
+        aria-label="Upload files"
         className={cn(
           "fixed bottom-6 right-6 z-40 h-14 w-14 rounded-full bg-foreground text-background shadow-lg flex items-center justify-center transition-all hover:scale-105 active:scale-95",
           uploading && "cursor-not-allowed opacity-70"

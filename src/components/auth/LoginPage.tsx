@@ -9,6 +9,8 @@ export function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
+  const [emailError, setEmailError] = useState(false)
+  const [passwordError, setPasswordError] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isDark, setIsDark] = useState(() =>
     document.documentElement.classList.contains("dark")
@@ -24,10 +26,14 @@ export function LoginPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError("")
+    setEmailError(false)
+    setPasswordError(false)
     setIsLoading(true)
     const result = login(email, password)
     if (result.error) {
       setError(result.error)
+      setEmailError(!email.trim())
+      setPasswordError(!password.trim())
     }
     setIsLoading(false)
   }
@@ -35,7 +41,7 @@ export function LoginPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <div className="flex justify-end p-4">
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleTheme}>
+        <Button variant="ghost" size="icon" aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"} className="h-8 w-8" onClick={toggleTheme}>
           {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </Button>
       </div>
@@ -66,7 +72,7 @@ export function LoginPage() {
                 className={cn(
                   "rounded-md border bg-background px-3 py-2 text-sm outline-none transition-shadow",
                   "focus:ring-2 focus:ring-ring placeholder:text-muted-foreground",
-                  error && "border-destructive focus:ring-destructive/40"
+                  emailError && "border-destructive focus:ring-destructive/40"
                 )}
               />
             </div>
@@ -85,7 +91,7 @@ export function LoginPage() {
                 className={cn(
                   "rounded-md border bg-background px-3 py-2 text-sm outline-none transition-shadow",
                   "focus:ring-2 focus:ring-ring placeholder:text-muted-foreground",
-                  error && "border-destructive focus:ring-destructive/40"
+                  passwordError && "border-destructive focus:ring-destructive/40"
                 )}
               />
             </div>

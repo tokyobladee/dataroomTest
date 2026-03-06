@@ -87,11 +87,6 @@ export function GlobalSidebar() {
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-52">
-            <div className="px-2 py-1.5">
-              <p className="text-sm font-medium truncate">{user?.name}</p>
-              <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
-            </div>
-            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={logout} className="text-destructive focus:text-destructive">
               <LogOut className="h-4 w-4 mr-2" />
               Sign out
@@ -102,6 +97,7 @@ export function GlobalSidebar() {
         <Button
           variant="ghost"
           size="icon"
+          aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
           className="h-7 w-7 shrink-0"
           onClick={() => setIsDark((d) => !d)}
         >
