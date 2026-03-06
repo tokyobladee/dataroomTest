@@ -206,13 +206,13 @@ export function FileList() {
                 </div>
                 <p className="text-sm font-medium">No files here</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Click the button below to upload PDF files
+                  Drag PDF files here or click the + button to upload
                 </p>
               </div>
             ) : (
               <table className="w-full text-sm border-collapse">
                 <thead>
-                  <tr className="border-b">
+                  <tr className="border-b sticky top-0 bg-background z-10">
                     <th className="w-10 px-3 py-2">
                       <button className="flex items-center justify-center" onClick={toggleSelectAll}>
                         {allSelected ? (
@@ -230,9 +230,6 @@ export function FileList() {
                     </th>
                     <th className="px-3 py-2 text-left">
                       <SortHeader label="Name" colKey="name" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
-                    </th>
-                    <th className="w-20 px-3 py-2 text-left">
-                      <SortHeader label="Type" colKey="type" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
                     </th>
                     <th className="w-24 px-3 py-2 text-left">
                       <SortHeader label="Size" colKey="size" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />

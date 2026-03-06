@@ -142,7 +142,7 @@ export function FileTreeItem({ file, depth }: Props) {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-white hover:bg-destructive/90"
+              variant="destructive"
               onClick={() => deleteFile(file.id)}
             >
               Delete

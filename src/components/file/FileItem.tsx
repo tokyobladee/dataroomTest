@@ -85,7 +85,6 @@ export function FileItem({ file }: Props) {
             <span className="font-medium truncate">{file.name}</span>
           </div>
         </td>
-        <td className="px-3 py-2.5 text-xs text-muted-foreground">PDF</td>
         <td className="px-3 py-2.5 text-xs text-muted-foreground">{formatSize(file.size)}</td>
         <td className="px-3 py-2.5 text-xs text-muted-foreground">{formatDate(file.createdAt)}</td>
         <td className="px-3 py-2.5 text-right">
@@ -145,7 +144,7 @@ export function FileItem({ file }: Props) {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-white hover:bg-destructive/90"
+              variant="destructive"
               onClick={() => deleteFile(file.id)}
             >
               Delete

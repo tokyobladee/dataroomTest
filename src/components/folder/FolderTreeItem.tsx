@@ -210,7 +210,7 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-white hover:bg-destructive/90"
+              variant="destructive"
               onClick={() => deleteFolder(folder.id)}
             >
               Delete

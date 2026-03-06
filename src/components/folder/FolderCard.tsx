@@ -117,7 +117,6 @@ export function FolderCard({ folder }: Props) {
             <ChevronRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
         </td>
-        <td className="px-3 py-2.5 text-xs text-muted-foreground">Folder</td>
         <td className="px-3 py-2.5 text-xs text-muted-foreground">—</td>
         <td className="px-3 py-2.5 text-xs text-muted-foreground">{formatDate(folder.createdAt)}</td>
         <td className="px-3 py-2.5 text-right">
@@ -179,7 +178,7 @@ export function FolderCard({ folder }: Props) {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-white hover:bg-destructive/90"
+              variant="destructive"
               onClick={() => deleteFolder(folder.id)}
             >
               Delete

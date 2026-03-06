@@ -13,9 +13,17 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 
-export function SelectionBar() {
+interface Props {
+  confirmOpen?: boolean
+  onConfirmOpenChange?: (open: boolean) => void
+}
+
+export function SelectionBar({ confirmOpen: externalOpen, onConfirmOpenChange }: Props) {
   const { selectedIds, clearSelection, deleteSelected } = useDataroomStore()
-  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [internalOpen, setInternalOpen] = useState(false)
+
+  const confirmOpen = externalOpen ?? internalOpen
+  const setConfirmOpen = onConfirmOpenChange ?? setInternalOpen
 
   if (selectedIds.length === 0) return null
 
@@ -58,7 +66,7 @@ export function SelectionBar() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-white hover:bg-destructive/90"
+              variant="destructive"
               onClick={handleDelete}
             >
               Delete
