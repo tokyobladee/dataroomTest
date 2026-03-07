@@ -1,6 +1,7 @@
 import { useRef, useState } from "react"
 import { Plus, Home } from "lucide-react"
 import { useDataroomStore } from "@/stores/dataroomStore"
+import { useNavigateFolder } from "@/lib/useNavigateFolder"
 import { Button } from "@/components/ui/button"
 import { FolderTreeItem } from "./FolderTreeItem"
 import { FolderDialog } from "./FolderDialog"
@@ -10,7 +11,8 @@ import { getDragItem, isInternalDrag } from "@/lib/dragItem"
 import { cn } from "@/lib/utils"
 
 export function FolderTree() {
-  const { folders, files, activeFolderId, setActiveFolder, createFolder, uploadFile, moveFile, moveFolder } = useDataroomStore()
+  const { folders, files, activeFolderId, createFolder, uploadFile, moveFile, moveFolder } = useDataroomStore()
+  const navigateFolder = useNavigateFolder()
   const [createOpen, setCreateOpen] = useState(false)
   const [isDragOverAllFiles, setIsDragOverAllFiles] = useState(false)
   const allFilesCounter = useRef(0)
@@ -82,7 +84,7 @@ export function FolderTree() {
           isRootActive && "bg-accent font-medium",
           isDragOverAllFiles && "bg-primary/10 ring-1 ring-inset ring-primary/50"
         )}
-        onClick={() => setActiveFolder(null)}
+        onClick={() => navigateFolder(null)}
         onDragEnter={handleAllFilesDragEnter}
         onDragLeave={(e) => handleAllFilesDragLeave(e)}
         onDragOver={handleAllFilesDragOver}

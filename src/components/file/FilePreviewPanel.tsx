@@ -78,75 +78,82 @@ export function FilePreviewPanel() {
     setDragging(true)
   }
 
-  if (!previewFileId || !file) return null
+  const isOpen = !!previewFileId && !!file
 
   return (
     <aside
-      className="flex flex-col shrink-0 border-l bg-background h-screen sticky top-0 relative"
-      style={{ width }}
+      className={cn(
+        "flex flex-col shrink-0 bg-background h-screen sticky top-0 relative overflow-hidden transition-[width] duration-200",
+        isOpen && "border-l"
+      )}
+      style={{ width: isOpen ? width : 0 }}
     >
-      <div
-        className={cn(
-          "absolute left-0 top-0 h-full w-1 cursor-col-resize z-10 transition-colors hover:bg-foreground/20",
-          dragging && "bg-foreground/20"
-        )}
-        onMouseDown={handleDragStart}
-      />
-
-      <div className="flex items-center gap-2 px-3 h-14 shrink-0">
-        <div className="rounded-md bg-muted p-1.5 shrink-0">
-          <FileText className="h-4 w-4 text-muted-foreground" />
-        </div>
-        <span className="flex-1 text-sm font-medium truncate">{file.name}</span>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Open in new tab"
-              className="h-7 w-7 shrink-0"
-              onClick={() => openFile(file.id)}
-            >
-              <ExternalLink className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Open in new tab</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Close preview"
-              className="h-7 w-7 shrink-0"
-              onClick={() => setPreviewFile(null)}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Close preview</TooltipContent>
-        </Tooltip>
-      </div>
-
-      <Separator />
-
-      <div className={cn("flex-1 overflow-hidden bg-muted/30", dragging && "pointer-events-none")}>
-        {loading ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
-          </div>
-        ) : blobUrl ? (
-          <iframe
-            src={blobUrl}
-            className="w-full h-full border-0"
-            title={file.name}
+      {isOpen && (
+        <>
+          <div
+            className={cn(
+              "absolute left-0 top-0 h-full w-1 cursor-col-resize z-10 transition-colors hover:bg-foreground/20",
+              dragging && "bg-foreground/20"
+            )}
+            onMouseDown={handleDragStart}
           />
-        ) : (
-          <div className="flex items-center justify-center h-full">
-            <p className="text-sm text-muted-foreground">Failed to load preview</p>
+
+          <div className="flex items-center gap-2 px-3 h-14 shrink-0">
+            <div className="rounded-md bg-muted p-1.5 shrink-0">
+              <FileText className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <span className="flex-1 text-sm font-medium truncate">{file.name}</span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Open in new tab"
+                  className="h-7 w-7 shrink-0"
+                  onClick={() => openFile(file.id)}
+                >
+                  <ExternalLink className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Open in new tab</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Close preview"
+                  className="h-7 w-7 shrink-0"
+                  onClick={() => setPreviewFile(null)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Close preview</TooltipContent>
+            </Tooltip>
           </div>
-        )}
-      </div>
+
+          <Separator />
+
+          <div className={cn("flex-1 overflow-hidden bg-muted/30", dragging && "pointer-events-none")}>
+            {loading ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
+              </div>
+            ) : blobUrl ? (
+              <iframe
+                src={blobUrl}
+                className="w-full h-full border-0"
+                title={file.name}
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <p className="text-sm text-muted-foreground">Failed to load preview</p>
+              </div>
+            )}
+          </div>
+        </>
+      )}
     </aside>
   )
 }

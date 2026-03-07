@@ -10,6 +10,7 @@ import {
 } from "lucide-react"
 import type { Folder as FolderType } from "@/types"
 import { useDataroomStore } from "@/stores/dataroomStore"
+import { useNavigateFolder } from "@/lib/useNavigateFolder"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -46,7 +47,6 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
     activeFolderId,
     expandedFolderIds,
     files,
-    setActiveFolder,
     toggleFolderExpanded,
     createFolder,
     moveFolder,
@@ -55,6 +55,7 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
     deleteFolder,
     uploadFile,
   } = useDataroomStore()
+  const navigateFolder = useNavigateFolder()
 
   const [createOpen, setCreateOpen] = useState(false)
   const [renameOpen, setRenameOpen] = useState(false)
@@ -113,7 +114,7 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
           isDragOver && "bg-primary/10 ring-1 ring-inset ring-primary/50"
         )}
         style={{ paddingLeft: `${8 + depth * 12}px`, paddingRight: "8px" }}
-        onClick={() => setActiveFolder(folder.id)}
+        onClick={() => navigateFolder(folder.id)}
         onDragEnter={handleDragEnter}
         onDragLeave={(e) => handleDragLeave(e)}
         onDragOver={handleDragOver}
@@ -150,7 +151,7 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
             <Button
               variant="ghost"
               size="icon"
-              className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+              className="h-5 w-5 opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity shrink-0"
             >
               <MoreHorizontal className="h-3 w-3" />
             </Button>
@@ -176,21 +177,22 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
         </DropdownMenu>
       </div>
 
-      {isExpanded && (
-        <div>
-          {children.map((child) => (
-            <FolderTreeItem
-              key={child.id}
-              folder={child}
-              depth={depth + 1}
-              allFolders={allFolders}
-            />
-          ))}
-          {folderFiles.map((file) => (
-            <FileTreeItem key={file.id} file={file} depth={depth + 1} />
-          ))}
-        </div>
-      )}
+      <div
+        className="overflow-hidden transition-[max-height] duration-200 ease-in-out"
+        style={{ maxHeight: isExpanded ? `${(children.length + folderFiles.length) * 200}px` : 0 }}
+      >
+        {children.map((child) => (
+          <FolderTreeItem
+            key={child.id}
+            folder={child}
+            depth={depth + 1}
+            allFolders={allFolders}
+          />
+        ))}
+        {folderFiles.map((file) => (
+          <FileTreeItem key={file.id} file={file} depth={depth + 1} />
+        ))}
+      </div>
 
       <FolderDialog
         open={createOpen}

@@ -1,6 +1,7 @@
 import { useRef, useState } from "react"
 import { Check, FileText, Folder as FolderIcon, ChevronRight, Search, X, Upload, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
 import { useDataroomStore } from "@/stores/dataroomStore"
+import { useNavigateFolder } from "@/lib/useNavigateFolder"
 import { FolderCard } from "@/components/folder/FolderCard"
 import { FileItem } from "./FileItem"
 import { handleDroppedFiles, isFileDrag } from "@/lib/dropFiles"
@@ -13,7 +14,8 @@ type SortKey = "name" | "size" | "date"
 type SortDir = "asc" | "desc"
 
 export function FileList() {
-  const { files, folders, activeFolderId, setActiveFolder, uploadFile, moveFile, moveFolder, selectedIds, selectAll, clearSelection, setPreviewFile, isLoading } = useDataroomStore()
+  const { files, folders, activeFolderId, uploadFile, moveFile, moveFolder, selectedIds, selectAll, clearSelection, setPreviewFile, isLoading } = useDataroomStore()
+  const navigateFolder = useNavigateFolder()
   const [isDragOver, setIsDragOver] = useState(false)
   const [isOsDrag, setIsOsDrag] = useState(false)
   const [query, setQuery] = useState("")
@@ -142,7 +144,7 @@ export function FileList() {
           folders={searchFolders}
           files={searchFiles}
           allFolders={folders}
-          onFolderClick={(id) => { setQuery(""); setActiveFolder(id) }}
+          onFolderClick={(id) => { setQuery(""); navigateFolder(id) }}
           onFileClick={(id) => { setQuery(""); setPreviewFile(id) }}
         />
       ) : (
@@ -151,7 +153,7 @@ export function FileList() {
             <nav className="flex items-center gap-1 text-sm text-muted-foreground">
               <button
                 className="hover:text-foreground transition-colors"
-                onClick={() => setActiveFolder(null)}
+                onClick={() => navigateFolder(null)}
               >
                 All files
               </button>
@@ -160,7 +162,7 @@ export function FileList() {
                   <ChevronRight className="h-3.5 w-3.5" />
                   <button
                     className="hover:text-foreground transition-colors"
-                    onClick={() => setActiveFolder(crumb.id)}
+                    onClick={() => navigateFolder(crumb.id)}
                   >
                     {crumb.name}
                   </button>
@@ -224,8 +226,8 @@ export function FileList() {
               <table className="w-full text-sm border-collapse">
                 <thead>
                   <tr className="border-b sticky top-0 bg-background z-10">
-                    <th scope="col" className="w-10 px-3 py-2">
-                      <button className="flex items-center justify-center" onClick={toggleSelectAll}>
+                    <th scope="col" className="w-10 p-0">
+                      <button className="flex items-center justify-center w-full py-2 px-3 min-h-[44px]" onClick={toggleSelectAll}>
                         {allSelected ? (
                           <span className="h-4 w-4 rounded bg-foreground border border-foreground flex items-center justify-center">
                             <Check className="h-2.5 w-2.5 text-background" />

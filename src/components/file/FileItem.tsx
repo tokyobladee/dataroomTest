@@ -69,8 +69,8 @@ export function FileItem({ file }: Props) {
         )}
         onClick={() => setPreviewFile(isPreviewed ? null : file.id)}
       >
-        <td className="px-3 py-2.5 w-10">
-          <button className="flex items-center justify-center" onClick={handleCheckbox}>
+        <td className="w-10 p-0">
+          <button className="flex items-center justify-center w-full py-2.5 px-3 min-h-[44px]" onClick={handleCheckbox}>
             {isSelected ? (
               <span className="h-4 w-4 rounded bg-foreground border border-foreground flex items-center justify-center">
                 <Check className="h-2.5 w-2.5 text-background" />
@@ -93,7 +93,7 @@ export function FileItem({ file }: Props) {
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+              className="h-7 w-7 opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity"
               onClick={(e) => { e.stopPropagation(); openFile(file.id) }}
             >
               <ExternalLink className="h-4 w-4" />
@@ -103,7 +103,7 @@ export function FileItem({ file }: Props) {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="h-7 w-7 opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity"
                 >
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>

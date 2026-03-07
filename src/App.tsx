@@ -1,4 +1,5 @@
 import { useEffect } from "react"
+import { Routes, Route } from "react-router-dom"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { Toaster } from "@/components/ui/sonner"
 import { useDataroomStore } from "@/stores/dataroomStore"
@@ -30,7 +31,9 @@ export default function App() {
   return (
     <TooltipProvider>
       <GlobalLayout>
-        <DataroomPage />
+        <Routes>
+          <Route path="*" element={<DataroomPage />} />
+        </Routes>
       </GlobalLayout>
       <Toaster />
     </TooltipProvider>

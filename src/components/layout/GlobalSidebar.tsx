@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { User, Upload, Sun, Moon, LogOut } from "lucide-react"
+import { User, Upload, Sun, Moon, LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react"
 import { useDataroomStore } from "@/stores/dataroomStore"
 import { useAuthStore } from "@/stores/authStore"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -23,6 +23,7 @@ export function GlobalSidebar() {
   const dragCounter = useRef(0)
   const [isDragOver, setIsDragOver] = useState(false)
   const [isOsDrag, setIsOsDrag] = useState(false)
+  const [collapsed, setCollapsed] = useState(false)
   const [isDark, setIsDark] = useState(() => {
     const stored = localStorage.getItem("theme")
     if (stored) return stored === "dark"
@@ -68,52 +69,74 @@ export function GlobalSidebar() {
 
   return (
     <aside
-      className="flex flex-col w-64 shrink-0 border-r bg-background h-screen sticky top-0"
+      className={cn(
+        "flex flex-col shrink-0 border-r bg-background h-screen sticky top-0 overflow-hidden transition-[width] duration-200",
+        collapsed ? "w-12" : "w-64"
+      )}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
-      <div className="flex items-center gap-2 px-3 h-14 shrink-0">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-2.5 flex-1 min-w-0 rounded-md px-1 py-1 hover:bg-accent transition-colors text-left">
-              <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center shrink-0">
-                <User className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{user?.name ?? "Guest"}</p>
-                <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
-              </div>
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-52">
-            <DropdownMenuItem onClick={logout} className="text-destructive focus:text-destructive">
-              <LogOut className="h-4 w-4 mr-2" />
-              Sign out
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+      <div className="flex items-center gap-2 px-2 h-14 shrink-0">
+        {!collapsed && (
+          <>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-2.5 flex-1 min-w-0 rounded-md px-1 py-1 hover:bg-accent transition-colors text-left">
+                  <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center shrink-0">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{user?.name ?? "Guest"}</p>
+                    <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                  </div>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-52">
+                <DropdownMenuItem onClick={logout} className="text-destructive focus:text-destructive">
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+                  className="h-7 w-7 shrink-0"
+                  onClick={() => setIsDark((d) => !d)}
+                >
+                  {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">{isDark ? "Light mode" : "Dark mode"}</TooltipContent>
+            </Tooltip>
+          </>
+        )}
 
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
               variant="ghost"
               size="icon"
-              aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-              className="h-7 w-7 shrink-0"
-              onClick={() => setIsDark((d) => !d)}
+              aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              className={cn("h-7 w-7 shrink-0", !collapsed && "ml-auto")}
+              onClick={() => setCollapsed((c) => !c)}
             >
-              {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="right">{isDark ? "Light mode" : "Dark mode"}</TooltipContent>
+          <TooltipContent side="right">{collapsed ? "Expand sidebar" : "Collapse sidebar"}</TooltipContent>
         </Tooltip>
       </div>
 
-      <Separator />
+      {!collapsed && <Separator />}
 
-      <div className="relative flex-1 min-h-0">
+      <div className={cn("relative flex-1 min-h-0", collapsed && "invisible")}>
         {isDragOver && isOsDrag && (
           <div className="absolute inset-0 z-20 pointer-events-none rounded-lg border-2 border-dashed border-primary bg-primary/5 flex flex-col items-center justify-center gap-2">
             <Upload className="h-5 w-5 text-primary" />
