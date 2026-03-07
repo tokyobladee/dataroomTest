@@ -8,6 +8,7 @@ import { handleDroppedFiles, isFileDrag } from "@/lib/dropFiles"
 import { getDragItem, isInternalDrag } from "@/lib/dragItem"
 import { FolderTree } from "@/components/folder/FolderTree"
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import {
   DropdownMenu,
