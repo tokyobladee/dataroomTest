@@ -85,17 +85,21 @@ export function GlobalSidebar() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-2.5 flex-1 min-w-0 rounded-md px-1 py-1 hover:bg-accent transition-colors text-left">
-                  <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center shrink-0">
-                    <User className="h-4 w-4 text-muted-foreground" />
+                  <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center shrink-0 overflow-hidden">
+                    {user?.picture ? (
+                      <img src={user.picture} alt={user.name ?? ""} className="h-full w-full object-cover" referrerPolicy="no-referrer" />
+                    ) : (
+                      <User className="h-4 w-4 text-muted-foreground" />
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{user?.name ?? "Guest"}</p>
+                    <p className="text-sm font-medium truncate">{user?.name ?? user?.email ?? "User"}</p>
                     <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
                   </div>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-52">
-                <DropdownMenuItem onClick={logout} className="text-destructive focus:text-destructive">
+                <DropdownMenuItem onClick={() => logout()} className="text-destructive focus:text-destructive">
                   <LogOut className="h-4 w-4 mr-2" />
                   Sign out
                 </DropdownMenuItem>

@@ -24,3 +24,21 @@ docs
 *.sln
 *.sw?
 *.claude
+.env
+.env.local
+.env.*.local
+
+# Python
+backend/venv/
+backend/__pycache__/
+backend/**/__pycache__/
+backend/**/*.pyc
+backend/**/*.pyo
+backend/.pytest_cache/
+
+# Firebase service account (contains private key — never commit)
+backend/firebase-service-account.json
+backend/dataroom-743bb-firebase-adminsdk-fbsvc-bc11ec2f14.json
+
+# Uploaded files
+backend/uploads/

@@ -9,18 +9,26 @@ import { DataroomPage } from "@/pages/DataroomPage"
 import { LoginPage } from "@/components/auth/LoginPage"
 
 export default function App() {
-  const { initDataroom, isLoading } = useDataroomStore()
-  const { user } = useAuthStore()
+  const { initDataroom, isLoading: dataroomLoading } = useDataroomStore()
+  const { user, isLoading: authLoading } = useAuthStore()
 
   useEffect(() => {
     if (user) initDataroom()
   }, [user, initDataroom])
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
+      </div>
+    )
+  }
+
   if (!user) {
     return <LoginPage />
   }
 
-  if (isLoading) {
+  if (dataroomLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="h-6 w-6 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
