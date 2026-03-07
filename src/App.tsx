@@ -6,6 +6,7 @@ import { useDataroomStore } from "@/stores/dataroomStore"
 import { useAuthStore } from "@/stores/authStore"
 import { GlobalLayout } from "@/components/layout/GlobalLayout"
 import { DataroomPage } from "@/pages/DataroomPage"
+import { DriveCallbackPage } from "@/pages/DriveCallbackPage"
 import { LoginPage } from "@/components/auth/LoginPage"
 
 export default function App() {
@@ -15,6 +16,11 @@ export default function App() {
   useEffect(() => {
     if (user) initDataroom()
   }, [user, initDataroom])
+
+  // OAuth callback page — always accessible, no auth required
+  if (window.location.pathname === "/drive/callback") {
+    return <DriveCallbackPage />
+  }
 
   if (authLoading) {
     return (

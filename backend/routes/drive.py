@@ -1,4 +1,5 @@
-from flask import Blueprint, g, jsonify, request
+from urllib.parse import urlencode
+from flask import Blueprint, g, jsonify, redirect, request, current_app
 from middleware.auth import require_auth
 
 bp = Blueprint("drive", __name__, url_prefix="/api/drive")
@@ -10,24 +11,37 @@ def auth_url():
     """Return the Google OAuth URL the frontend should redirect to."""
     from container import get_drive_service
     svc = get_drive_service()
-    url = svc.get_authorization_url(state=g.user_uid)
+    url = svc.get_authorization_url(g.user_uid)
     return jsonify({"url": url})
 
 
 @bp.route("/callback", methods=["GET"])
-@require_auth
 def oauth_callback():
-    """Exchange the authorization code for tokens and store them."""
+    """Exchange the authorization code for tokens, then redirect to the
+    frontend /drive/callback page (same origin) so it can use postMessage.
+
+    No Firebase auth here — we trust `state` (= user_uid) because it was
+    set by us and is bound to the one-time authorization code.
+    """
+    from extensions import db
     from container import get_drive_service
+    frontend = current_app.config.get("FRONTEND_URL", "http://localhost:5173")
     code = request.args.get("code")
-    if not code:
-        return jsonify({"error": "code is required"}), 400
+    state = request.args.get("state")  # base64-JSON {uid, cv} set by get_authorization_url
+    if not code or not state:
+        return redirect(f"{frontend}/drive/callback?error=missing+params")
     svc = get_drive_service()
     try:
-        svc.handle_callback(g.user_uid, code)
+        svc.handle_callback(state, code)
+        # Commit immediately — teardown runs AFTER the response bytes are sent,
+        # so without this the token would not be in the DB when the frontend
+        # fires its next request right after receiving the redirect.
+        db.session.commit()
     except Exception as e:
-        return jsonify({"error": str(e)}), 400
-    return jsonify({"ok": True})
+        db.session.rollback()
+        params = urlencode({"error": str(e)})
+        return redirect(f"{frontend}/drive/callback?{params}")
+    return redirect(f"{frontend}/drive/callback?connected=1")
 
 
 @bp.route("/files", methods=["GET"])

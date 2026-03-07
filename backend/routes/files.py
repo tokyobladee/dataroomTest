@@ -43,15 +43,17 @@ def download_file(dataroom_id: str, file_id: str):
     from container import get_file_service
     svc = get_file_service()
     try:
-        data, mime_type = svc.get_content(dataroom_id, file_id, g.user_uid)
+        data, mime_type, file_name = svc.get_content(dataroom_id, file_id, g.user_uid)
     except PermissionError as e:
         return jsonify({"error": str(e)}), 403
     except ValueError as e:
         return jsonify({"error": str(e)}), 404
+    as_attachment = request.args.get("download") == "1"
     return send_file(
         io.BytesIO(data),
         mimetype=mime_type or "application/octet-stream",
-        as_attachment=False,
+        as_attachment=as_attachment,
+        download_name=file_name if as_attachment else None,
     )
 
 

@@ -52,6 +52,8 @@ interface DataroomState {
   renameFile: (id: string, name: string) => Promise<void>
   deleteFile: (id: string) => Promise<void>
   openFile: (id: string) => Promise<void>
+  downloadFile: (id: string) => Promise<void>
+  importFromDrive: (driveFileIds: string[]) => Promise<void>
   setPreviewFile: (id: string | null) => void
 
   toggleSelected: (id: string) => void
@@ -247,6 +249,32 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
       tab.addEventListener("load", () => URL.revokeObjectURL(url))
     } else {
       setTimeout(() => URL.revokeObjectURL(url), 10_000)
+    }
+  },
+
+  downloadFile: async (id) => {
+    const { dataroomId, files } = get()
+    if (!dataroomId) return
+    const file = files.find((f) => f.id === id)
+    const res = await apiFetch(`/api/datarooms/${dataroomId}/files/${id}?download=1`)
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = file?.name ?? "file"
+    a.click()
+    URL.revokeObjectURL(url)
+  },
+
+  importFromDrive: async (driveFileIds) => {
+    const { dataroomId, activeFolderId } = get()
+    if (!dataroomId) return
+    for (const driveFileId of driveFileIds) {
+      const raw = await apiJSON<Record<string, unknown>>("/api/drive/import", {
+        method: "POST",
+        body: JSON.stringify({ driveFileId, dataroomId, folderId: activeFolderId }),
+      })
+      set((s) => ({ files: [...s.files, mapFile(raw)] }))
     }
   },
 

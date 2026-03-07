@@ -1,3 +1,7 @@
+import base64
+import hashlib
+import json
+import secrets
 from datetime import datetime, timezone, timedelta
 
 from cryptography.fernet import Fernet
@@ -36,20 +40,51 @@ class DriveService:
     # OAuth flow
     # ------------------------------------------------------------------
 
-    def get_authorization_url(self, state: str) -> str:
+    def get_authorization_url(self, user_uid: str) -> str:
+        """Build an OAuth URL with manual PKCE.
+
+        We generate the code_verifier ourselves and pack it into the `state`
+        parameter as base64-JSON so it survives the round-trip to Google and
+        back without any server-side session storage.
+        """
+        code_verifier = secrets.token_urlsafe(48)
+        code_challenge = (
+            base64.urlsafe_b64encode(hashlib.sha256(code_verifier.encode()).digest())
+            .rstrip(b"=")
+            .decode()
+        )
+        # Encode user_uid + code_verifier into a single opaque state string
+        state = base64.urlsafe_b64encode(
+            json.dumps({"uid": user_uid, "cv": code_verifier}).encode()
+        ).decode()
+
         flow = self._make_flow()
         auth_url, _ = flow.authorization_url(
             access_type="offline",
-            include_granted_scopes="true",
             state=state,
-            prompt="consent",  # always prompt to ensure refresh_token is returned
+            prompt="consent",
+            code_challenge=code_challenge,
+            code_challenge_method="S256",
         )
         return auth_url
 
-    def handle_callback(self, user_uid: str, code: str) -> None:
+    def handle_callback(self, state_encoded: str, code: str) -> None:
+        """Decode state, exchange code (with PKCE verifier), and persist tokens."""
+        try:
+            state_data = json.loads(base64.urlsafe_b64decode(state_encoded.encode()))
+            user_uid: str = state_data["uid"]
+            code_verifier: str = state_data["cv"]
+        except Exception:
+            raise ValueError("Invalid OAuth state parameter")
+
         flow = self._make_flow()
-        flow.fetch_token(code=code)
+        flow.fetch_token(code=code, code_verifier=code_verifier)
         creds = flow.credentials
+
+        if not creds.refresh_token:
+            raise ValueError(
+                "No refresh token returned. Revoke app access in your Google account and try again."
+            )
 
         refresh_token_encrypted = self._fernet.encrypt(creds.refresh_token.encode()).decode()
         expires_at = creds.expiry.replace(tzinfo=timezone.utc) if creds.expiry else None
@@ -106,7 +141,9 @@ class DriveService:
         params = {
             "pageSize": 50,
             "fields": "nextPageToken,files(id,name,size,mimeType,modifiedTime)",
-            "q": "trashed=false",
+            # Exclude Google Workspace native formats (Docs, Sheets, Slides, etc.)
+            # — those require Export, not get_media, and cannot be stored as-is.
+            "q": "trashed=false and not mimeType contains 'application/vnd.google-apps'",
         }
         if page_token:
             params["pageToken"] = page_token

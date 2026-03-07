@@ -31,14 +31,14 @@ class FileService:
             uploaded_by_uid=user_uid,
         )
 
-    def get_content(self, dataroom_id: str, file_id: str, user_uid: str) -> tuple[bytes, str]:
-        """Returns (file_bytes, mime_type)."""
+    def get_content(self, dataroom_id: str, file_id: str, user_uid: str) -> tuple[bytes, str, str]:
+        """Returns (file_bytes, mime_type, file_name)."""
         self._assert_access(dataroom_id, user_uid)
         file = self._files.get(file_id)
         if not file or file.dataroom_id != dataroom_id:
             raise ValueError("File not found")
         data = self._storage.load(file.storage_path)
-        return data, file.mime_type
+        return data, file.mime_type, file.name
 
     def rename(self, dataroom_id: str, file_id: str, name: str, user_uid: str) -> FileDTO:
         if not name.strip():

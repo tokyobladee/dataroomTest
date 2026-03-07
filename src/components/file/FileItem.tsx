@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { FileText, MoreHorizontal, Pencil, Trash2, ExternalLink, Check } from "lucide-react"
+import { FileText, MoreHorizontal, Pencil, Trash2, ExternalLink, Download, Check } from "lucide-react"
 import type { DataroomFile } from "@/types"
 import { useDataroomStore } from "@/stores/dataroomStore"
 import { cn } from "@/lib/utils"
@@ -30,7 +30,7 @@ interface Props {
 }
 
 export function FileItem({ file }: Props) {
-  const { openFile, renameFile, deleteFile, selectedIds, toggleSelected, previewFileId, setPreviewFile } =
+  const { openFile, downloadFile, renameFile, deleteFile, selectedIds, toggleSelected, previewFileId, setPreviewFile } =
     useDataroomStore()
   const [renameOpen, setRenameOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
@@ -97,6 +97,14 @@ export function FileItem({ file }: Props) {
               onClick={(e) => { e.stopPropagation(); openFile(file.id) }}
             >
               <ExternalLink className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity"
+              onClick={(e) => { e.stopPropagation(); downloadFile(file.id) }}
+            >
+              <Download className="h-4 w-4" />
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
