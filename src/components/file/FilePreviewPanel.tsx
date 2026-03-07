@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { X, ExternalLink, FileText } from "lucide-react"
 import { useDataroomStore } from "@/stores/dataroomStore"
-import { getFileBlob } from "@/db/files"
+import { apiFetch } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
@@ -32,18 +32,29 @@ export function FilePreviewPanel() {
       return
     }
 
+    const { dataroomId } = useDataroomStore.getState()
+    if (!dataroomId) return
+
     let url: string | null = null
+    let cancelled = false
     setLoading(true)
 
-    getFileBlob(previewFileId).then((blob) => {
-      if (blob) {
+    apiFetch(`/api/datarooms/${dataroomId}/files/${previewFileId}`)
+      .then((res) => res.blob())
+      .then((blob) => {
+        if (cancelled) return
         url = URL.createObjectURL(blob)
         setBlobUrl(url)
-      }
-      setLoading(false)
-    })
+      })
+      .catch(() => {
+        if (!cancelled) setBlobUrl(null)
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
 
     return () => {
+      cancelled = true
       if (url) URL.revokeObjectURL(url)
     }
   }, [previewFileId])
