@@ -16,7 +16,7 @@ class ShareService:
         self._folders = folder_repo
         self._files = file_repo
 
-    def list(self, dataroom_id: str, user_uid: str) -> list[ShareLinkDTO]:
+    def list_links(self, dataroom_id: str, user_uid: str) -> list[ShareLinkDTO]:
         self._assert_role(dataroom_id, user_uid, ("owner",))
         return self._shares.list_by_dataroom(dataroom_id)
 

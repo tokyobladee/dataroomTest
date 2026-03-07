@@ -27,7 +27,7 @@ def create_folder(dataroom_id: str):
         return jsonify({"error": "name is required"}), 400
     svc = get_folder_service()
     try:
-        folder = svc.create(dataroom_id, name, parent_id, g.user_uid)
+        folder = svc.create(dataroom_id, parent_id, name, g.user_uid)
     except PermissionError as e:
         return jsonify({"error": str(e)}), 403
     except ValueError as e:
@@ -37,15 +37,19 @@ def create_folder(dataroom_id: str):
 
 @bp.route("/<folder_id>", methods=["PATCH"])
 @require_auth
-def rename_folder(dataroom_id: str, folder_id: str):
+def update_folder(dataroom_id: str, folder_id: str):
     from container import get_folder_service
     data = request.get_json(force=True)
-    name = (data.get("name") or "").strip()
-    if not name:
-        return jsonify({"error": "name is required"}), 400
     svc = get_folder_service()
     try:
-        folder = svc.rename(folder_id, name, g.user_uid)
+        if "parentId" in data:
+            parent_id = data.get("parentId")  # may be None (move to root)
+            folder = svc.move(dataroom_id, folder_id, parent_id, g.user_uid)
+        else:
+            name = (data.get("name") or "").strip()
+            if not name:
+                return jsonify({"error": "name is required"}), 400
+            folder = svc.rename(dataroom_id, folder_id, name, g.user_uid)
     except PermissionError as e:
         return jsonify({"error": str(e)}), 403
     except ValueError as e:
@@ -59,7 +63,7 @@ def delete_folder(dataroom_id: str, folder_id: str):
     from container import get_folder_service
     svc = get_folder_service()
     try:
-        svc.delete(folder_id, g.user_uid)
+        svc.delete(dataroom_id, folder_id, g.user_uid)
     except PermissionError as e:
         return jsonify({"error": str(e)}), 403
     except ValueError as e:

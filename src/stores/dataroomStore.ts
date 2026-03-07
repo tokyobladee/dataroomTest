@@ -1,13 +1,35 @@
 import { create } from "zustand"
-import { getAllDatarooms, createDataroom } from "@/db/datarooms"
-import { getFoldersByDataroom, createFolder, updateFolder, deleteFolder } from "@/db/folders"
-import { getFilesByDataroom, createFile, updateFile, deleteFile, getFileBlob } from "@/db/files"
+import { apiFetch, apiJSON } from "@/lib/api"
 import type { DataroomFile, Folder } from "@/types"
-import { nanoid } from "@/lib/nanoid"
 
-const DATAROOM_ID = "default"
+// ---------- helpers: map snake_case API response → camelCase ----------
+
+function mapFolder(r: Record<string, unknown>): Folder {
+  return {
+    id: r.id as string,
+    dataroomId: (r.dataroom_id ?? r.dataroomId) as string,
+    parentId: (r.parent_id ?? r.parentId ?? null) as string | null,
+    name: r.name as string,
+    createdAt: r.created_at ? new Date(r.created_at as string).getTime() : Date.now(),
+  }
+}
+
+function mapFile(r: Record<string, unknown>): DataroomFile {
+  return {
+    id: r.id as string,
+    dataroomId: (r.dataroom_id ?? r.dataroomId) as string,
+    folderId: (r.folder_id ?? r.folderId ?? null) as string | null,
+    name: r.name as string,
+    size: r.size as number,
+    mimeType: (r.mime_type ?? r.mimeType ?? "") as string,
+    createdAt: r.created_at ? new Date(r.created_at as string).getTime() : Date.now(),
+  }
+}
+
+// ---------- state ----------
 
 interface DataroomState {
+  dataroomId: string | null
   folders: Folder[]
   files: DataroomFile[]
   activeFolderId: string | null
@@ -39,6 +61,7 @@ interface DataroomState {
 }
 
 export const useDataroomStore = create<DataroomState>((set, get) => ({
+  dataroomId: null,
   folders: [],
   files: [],
   activeFolderId: null,
@@ -47,20 +70,41 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
   previewFileId: null,
   isLoading: false,
 
+  // ----------------------------------------------------------------
+  // Init: get or create the user's first dataroom, then load content
+  // ----------------------------------------------------------------
   initDataroom: async () => {
     set({ isLoading: true })
-    const existing = await getAllDatarooms()
-    if (existing.length === 0) {
-      await createDataroom({ id: DATAROOM_ID, name: "My Dataroom", createdAt: Date.now() })
+    try {
+      let rooms = await apiJSON<Record<string, unknown>[]>("/api/datarooms")
+      if (rooms.length === 0) {
+        const created = await apiJSON<Record<string, unknown>>("/api/datarooms", {
+          method: "POST",
+          body: JSON.stringify({ name: "My Dataroom" }),
+        })
+        rooms = [created]
+      }
+      const dataroomId = rooms[0].id as string
+      const [rawFolders, rawFiles] = await Promise.all([
+        apiJSON<Record<string, unknown>[]>(`/api/datarooms/${dataroomId}/folders`),
+        apiJSON<Record<string, unknown>[]>(`/api/datarooms/${dataroomId}/files`),
+      ])
+      set({
+        dataroomId,
+        folders: rawFolders.map(mapFolder),
+        files: rawFiles.map(mapFile),
+        isLoading: false,
+      })
+    } catch (e) {
+      set({ isLoading: false })
+      throw e
     }
-    const [folders, files] = await Promise.all([
-      getFoldersByDataroom(DATAROOM_ID),
-      getFilesByDataroom(DATAROOM_ID),
-    ])
-    set({ folders, files, isLoading: false })
   },
 
-  setActiveFolder: (id: string | null) => {
+  // ----------------------------------------------------------------
+  // Navigation
+  // ----------------------------------------------------------------
+  setActiveFolder: (id) => {
     if (id === null) {
       set({ activeFolderId: null, previewFileId: null })
       return
@@ -73,7 +117,7 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
     }))
   },
 
-  toggleFolderExpanded: (id: string) => {
+  toggleFolderExpanded: (id) => {
     set((s) => ({
       expandedFolderIds: s.expandedFolderIds.includes(id)
         ? s.expandedFolderIds.filter((fid) => fid !== id)
@@ -81,20 +125,17 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
     }))
   },
 
-  createFolder: async (name: string, parentId: string | null) => {
-    const { folders } = get()
-
-    const siblings = folders.filter((f) => f.parentId === parentId && f.dataroomId === DATAROOM_ID)
-    const uniqueName = resolveUniqueName(name, siblings.map((f) => f.name))
-
-    const folder: Folder = {
-      id: nanoid(),
-      dataroomId: DATAROOM_ID,
-      parentId,
-      name: uniqueName,
-      createdAt: Date.now(),
-    }
-    await createFolder(folder)
+  // ----------------------------------------------------------------
+  // Folders
+  // ----------------------------------------------------------------
+  createFolder: async (name, parentId) => {
+    const { dataroomId } = get()
+    if (!dataroomId) return
+    const raw = await apiJSON<Record<string, unknown>>(
+      `/api/datarooms/${dataroomId}/folders`,
+      { method: "POST", body: JSON.stringify({ name, parentId }) },
+    )
+    const folder = mapFolder(raw)
     set((s) => ({
       folders: [...s.folders, folder],
       expandedFolderIds: parentId
@@ -103,29 +144,37 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
     }))
   },
 
-  moveFolder: async (id: string, parentId: string | null) => {
-    const { folders } = get()
+  moveFolder: async (id, parentId) => {
+    const { folders, dataroomId } = get()
     const folder = folders.find((f) => f.id === id)
-    if (!folder || folder.parentId === parentId) return
+    if (!folder || folder.parentId === parentId || !dataroomId) return
     const descendants = collectDescendantIds(id, folders)
     if (parentId !== null && (parentId === id || descendants.has(parentId))) return
-    const updated = { ...folder, parentId }
-    await updateFolder(updated)
+    const raw = await apiJSON<Record<string, unknown>>(
+      `/api/datarooms/${dataroomId}/folders/${id}`,
+      { method: "PATCH", body: JSON.stringify({ parentId }) },
+    )
+    const updated = mapFolder(raw)
     set((s) => ({ folders: s.folders.map((f) => (f.id === id ? updated : f)) }))
   },
 
-  renameFolder: async (id: string, name: string) => {
-    const folder = get().folders.find((f) => f.id === id)
-    if (!folder) return
-    const updated = { ...folder, name }
-    await updateFolder(updated)
+  renameFolder: async (id, name) => {
+    const { dataroomId } = get()
+    if (!dataroomId) return
+    const raw = await apiJSON<Record<string, unknown>>(
+      `/api/datarooms/${dataroomId}/folders/${id}`,
+      { method: "PATCH", body: JSON.stringify({ name }) },
+    )
+    const updated = mapFolder(raw)
     set((s) => ({ folders: s.folders.map((f) => (f.id === id ? updated : f)) }))
   },
 
-  deleteFolder: async (id: string) => {
+  deleteFolder: async (id) => {
+    const { dataroomId } = get()
+    if (!dataroomId) return
     const idsToDelete = collectDescendantIds(id, get().folders)
     idsToDelete.add(id)
-    await deleteFolder(id)
+    await apiFetch(`/api/datarooms/${dataroomId}/folders/${id}`, { method: "DELETE" })
     set((s) => ({
       folders: s.folders.filter((f) => !idsToDelete.has(f.id)),
       files: s.files.filter((f) => f.folderId === null || !idsToDelete.has(f.folderId)),
@@ -135,44 +184,51 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
     }))
   },
 
-  uploadFile: async (file: File, folderId: string | null) => {
-    const { files } = get()
-
-    const baseName = file.name.replace(/\.pdf$/i, "")
-    const siblings = files.filter((f) => f.folderId === folderId && f.dataroomId === DATAROOM_ID)
-    const uniqueName = resolveUniqueName(baseName, siblings.map((f) => f.name))
-
-    const record: DataroomFile = {
-      id: nanoid(),
-      dataroomId: DATAROOM_ID,
-      folderId,
-      name: uniqueName,
-      size: file.size,
-      mimeType: file.type,
-      createdAt: Date.now(),
-    }
-    await createFile(record, file)
-    set((s) => ({ files: [...s.files, record] }))
+  // ----------------------------------------------------------------
+  // Files
+  // ----------------------------------------------------------------
+  uploadFile: async (file, folderId) => {
+    const { dataroomId } = get()
+    if (!dataroomId) return
+    const form = new FormData()
+    form.append("file", file)
+    if (folderId) form.append("folderId", folderId)
+    // apiFetch handles auth; don't set Content-Type — browser sets it with boundary
+    const res = await apiFetch(`/api/datarooms/${dataroomId}/files`, {
+      method: "POST",
+      body: form,
+    })
+    const raw: Record<string, unknown> = await res.json()
+    set((s) => ({ files: [...s.files, mapFile(raw)] }))
   },
 
-  moveFile: async (id: string, folderId: string | null) => {
-    const file = get().files.find((f) => f.id === id)
-    if (!file || file.folderId === folderId) return
-    const updated = { ...file, folderId }
-    await updateFile(updated)
+  moveFile: async (id, folderId) => {
+    const { dataroomId, files } = get()
+    const file = files.find((f) => f.id === id)
+    if (!file || file.folderId === folderId || !dataroomId) return
+    const raw = await apiJSON<Record<string, unknown>>(
+      `/api/datarooms/${dataroomId}/files/${id}`,
+      { method: "PATCH", body: JSON.stringify({ folderId }) },
+    )
+    const updated = mapFile(raw)
     set((s) => ({ files: s.files.map((f) => (f.id === id ? updated : f)) }))
   },
 
-  renameFile: async (id: string, name: string) => {
-    const file = get().files.find((f) => f.id === id)
-    if (!file) return
-    const updated = { ...file, name }
-    await updateFile(updated)
+  renameFile: async (id, name) => {
+    const { dataroomId } = get()
+    if (!dataroomId) return
+    const raw = await apiJSON<Record<string, unknown>>(
+      `/api/datarooms/${dataroomId}/files/${id}`,
+      { method: "PATCH", body: JSON.stringify({ name }) },
+    )
+    const updated = mapFile(raw)
     set((s) => ({ files: s.files.map((f) => (f.id === id ? updated : f)) }))
   },
 
-  deleteFile: async (id: string) => {
-    await deleteFile(id)
+  deleteFile: async (id) => {
+    const { dataroomId } = get()
+    if (!dataroomId) return
+    await apiFetch(`/api/datarooms/${dataroomId}/files/${id}`, { method: "DELETE" })
     set((s) => ({
       files: s.files.filter((f) => f.id !== id),
       selectedIds: s.selectedIds.filter((sid) => sid !== id),
@@ -180,9 +236,11 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
     }))
   },
 
-  openFile: async (id: string) => {
-    const blob = await getFileBlob(id)
-    if (!blob) return
+  openFile: async (id) => {
+    const { dataroomId } = get()
+    if (!dataroomId) return
+    const res = await apiFetch(`/api/datarooms/${dataroomId}/files/${id}`)
+    const blob = await res.blob()
     const url = URL.createObjectURL(blob)
     const tab = window.open(url, "_blank")
     if (tab) {
@@ -192,11 +250,12 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
     }
   },
 
-  setPreviewFile: (id: string | null) => {
-    set({ previewFileId: id })
-  },
+  setPreviewFile: (id) => set({ previewFileId: id }),
 
-  toggleSelected: (id: string) => {
+  // ----------------------------------------------------------------
+  // Selection
+  // ----------------------------------------------------------------
+  toggleSelected: (id) => {
     set((s) => ({
       selectedIds: s.selectedIds.includes(id)
         ? s.selectedIds.filter((sid) => sid !== id)
@@ -204,20 +263,16 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
     }))
   },
 
-  selectAll: (ids: string[]) => {
-    set({ selectedIds: ids })
-  },
+  selectAll: (ids) => set({ selectedIds: ids }),
 
-  clearSelection: () => {
-    set({ selectedIds: [] })
-  },
+  clearSelection: () => set({ selectedIds: [] }),
 
   deleteSelected: async () => {
-    const { selectedIds, folders, files } = get()
+    const { selectedIds, folders, files, dataroomId } = get()
+    if (!dataroomId) return
     const selectedSet = new Set(selectedIds)
 
     const folderIdsToDelete = folders.filter((f) => selectedSet.has(f.id)).map((f) => f.id)
-
     const allFolderIdsToDelete = new Set<string>()
     for (const fid of folderIdsToDelete) {
       allFolderIdsToDelete.add(fid)
@@ -229,8 +284,12 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
       .map((f) => f.id)
 
     await Promise.all([
-      ...folderIdsToDelete.map((id) => deleteFolder(id)),
-      ...fileIdsToDelete.map((id) => deleteFile(id)),
+      ...folderIdsToDelete.map((id) =>
+        apiFetch(`/api/datarooms/${dataroomId}/folders/${id}`, { method: "DELETE" }),
+      ),
+      ...fileIdsToDelete.map((id) =>
+        apiFetch(`/api/datarooms/${dataroomId}/files/${id}`, { method: "DELETE" }),
+      ),
     ])
 
     set((s) => ({
@@ -243,6 +302,8 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
     }))
   },
 }))
+
+// ---------- pure helpers ----------
 
 function getAncestorIds(folderId: string, allFolders: Folder[]): string[] {
   const ancestors: string[] = []
@@ -261,11 +322,4 @@ function collectDescendantIds(parentId: string, allFolders: Folder[]): Set<strin
     collectDescendantIds(child.id, allFolders).forEach((id) => result.add(id))
   }
   return result
-}
-
-function resolveUniqueName(base: string, existingNames: string[]): string {
-  if (!existingNames.includes(base)) return base
-  let counter = 1
-  while (existingNames.includes(`${base} (${counter})`)) counter++
-  return `${base} (${counter})`
 }

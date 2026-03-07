@@ -21,6 +21,13 @@ class FolderService:
 
         return self._folders.create(dataroom_id, parent_id, name.strip(), user_uid)
 
+    def move(self, dataroom_id: str, folder_id: str, parent_id: str | None, user_uid: str) -> FolderDTO:
+        self._assert_role(dataroom_id, user_uid, ("owner", "editor"))
+        folder = self._folders.get(folder_id)
+        if not folder or folder.dataroom_id != dataroom_id:
+            raise ValueError("Folder not found")
+        return self._folders.move(folder_id, parent_id)
+
     def rename(self, dataroom_id: str, folder_id: str, name: str, user_uid: str) -> FolderDTO:
         if not name.strip():
             raise ValueError("Name is required")

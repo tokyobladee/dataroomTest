@@ -15,7 +15,7 @@ def list_links(dataroom_id: str):
     from container import get_share_service
     svc = get_share_service()
     try:
-        links = svc.list(dataroom_id, g.user_uid)
+        links = svc.list_links(dataroom_id, g.user_uid)
     except PermissionError as e:
         return jsonify({"error": str(e)}), 403
     return jsonify([_link_dict(l) for l in links])

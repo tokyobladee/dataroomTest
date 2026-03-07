@@ -17,7 +17,12 @@ def create_app(config_name: str | None = None) -> Flask:
 
     # --- Extensions ---
     db.init_app(app)
-    CORS(app, resources={r"/api/*": {"origins": app.config.get("CORS_ORIGINS", "*")}})
+    CORS(
+        app,
+        resources={r"/api/*": {"origins": app.config.get("CORS_ORIGINS", "*")}},
+        allow_headers=["Authorization", "Content-Type"],
+        methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    )
 
     # --- Firebase Admin SDK ---
     if not firebase_admin._apps:

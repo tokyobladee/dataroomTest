@@ -32,6 +32,12 @@ class PostgresFolderRepository(FolderRepository):
         self._db.flush()
         return _to_dto(row)
 
+    def move(self, folder_id: str, parent_id: str | None) -> FolderDTO:
+        row = self._db.get(Folder, folder_id)
+        row.parent_id = parent_id
+        self._db.flush()
+        return _to_dto(row)
+
     def rename(self, folder_id: str, name: str) -> FolderDTO:
         row = self._db.get(Folder, folder_id)
         row.name = name

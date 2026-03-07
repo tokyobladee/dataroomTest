@@ -57,15 +57,19 @@ def download_file(dataroom_id: str, file_id: str):
 
 @bp.route("/<file_id>", methods=["PATCH"])
 @require_auth
-def rename_file(dataroom_id: str, file_id: str):
+def update_file(dataroom_id: str, file_id: str):
     from container import get_file_service
     data = request.get_json(force=True)
-    name = (data.get("name") or "").strip()
-    if not name:
-        return jsonify({"error": "name is required"}), 400
     svc = get_file_service()
     try:
-        file_dto = svc.rename(dataroom_id, file_id, name, g.user_uid)
+        if "folderId" in data:
+            folder_id = data.get("folderId")  # may be None (move to root)
+            file_dto = svc.move(dataroom_id, file_id, folder_id, g.user_uid)
+        else:
+            name = (data.get("name") or "").strip()
+            if not name:
+                return jsonify({"error": "name is required"}), 400
+            file_dto = svc.rename(dataroom_id, file_id, name, g.user_uid)
     except PermissionError as e:
         return jsonify({"error": str(e)}), 403
     except ValueError as e:
