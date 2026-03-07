@@ -1,5 +1,5 @@
 import { useRef, useState } from "react"
-import { Folder, MoreHorizontal, Plus, Pencil, Trash2, Check, ChevronRight } from "lucide-react"
+import { Folder, MoreHorizontal, Plus, Pencil, Trash2, Check, ChevronRight, Link2 } from "lucide-react"
 import type { Folder as FolderType } from "@/types"
 import { useDataroomStore } from "@/stores/dataroomStore"
 import { useNavigateFolder } from "@/lib/useNavigateFolder"
@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { FolderDialog } from "./FolderDialog"
+import { ShareFolderDialog } from "@/components/share/ShareFolderDialog"
 
 interface Props {
   folder: FolderType
@@ -38,6 +39,7 @@ export function FolderCard({ folder }: Props) {
   const [createOpen, setCreateOpen] = useState(false)
   const [renameOpen, setRenameOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [shareOpen, setShareOpen] = useState(false)
   const [isDragOver, setIsDragOver] = useState(false)
   const dragCounter = useRef(0)
 
@@ -133,6 +135,11 @@ export function FolderCard({ folder }: Props) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+              <DropdownMenuItem onClick={() => setShareOpen(true)}>
+                <Link2 className="h-4 w-4 mr-2" />
+                Share
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => setCreateOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 New subfolder
@@ -153,6 +160,13 @@ export function FolderCard({ folder }: Props) {
           </DropdownMenu>
         </td>
       </tr>
+
+      <ShareFolderDialog
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        folderId={folder.id}
+        folderName={folder.name}
+      />
 
       <FolderDialog
         open={createOpen}

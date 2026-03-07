@@ -7,6 +7,7 @@ import {
   Plus,
   Pencil,
   Trash2,
+  Link2,
 } from "lucide-react"
 import type { Folder as FolderType } from "@/types"
 import { useDataroomStore } from "@/stores/dataroomStore"
@@ -32,6 +33,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { FolderDialog } from "./FolderDialog"
+import { ShareFolderDialog } from "@/components/share/ShareFolderDialog"
 import { FileTreeItem } from "@/components/file/FileTreeItem"
 import { handleDroppedFiles, isFileDrag } from "@/lib/dropFiles"
 import { setDragItem, getDragItem, isInternalDrag } from "@/lib/dragItem"
@@ -60,6 +62,7 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
   const [createOpen, setCreateOpen] = useState(false)
   const [renameOpen, setRenameOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [shareOpen, setShareOpen] = useState(false)
   const [isDragOver, setIsDragOver] = useState(false)
   const dragCounter = useRef(0)
 
@@ -157,6 +160,11 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" onClick={(e) => e.stopPropagation()}>
+            <DropdownMenuItem onClick={() => setShareOpen(true)}>
+              <Link2 className="h-4 w-4 mr-2" />
+              Share
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => setCreateOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
               New subfolder
@@ -193,6 +201,13 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
           <FileTreeItem key={file.id} file={file} depth={depth + 1} />
         ))}
       </div>
+
+      <ShareFolderDialog
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        folderId={folder.id}
+        folderName={folder.name}
+      />
 
       <FolderDialog
         open={createOpen}

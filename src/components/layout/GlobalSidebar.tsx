@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { User, Upload, Sun, Moon, LogOut, PanelLeftClose, PanelLeftOpen, Users } from "lucide-react"
+import { User, Upload, Sun, Moon, LogOut, PanelLeftClose, PanelLeftOpen, Users, Link2 } from "lucide-react"
 import { useDataroomStore } from "@/stores/dataroomStore"
 import { useAuthStore } from "@/stores/authStore"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -18,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { MembersDialog } from "@/components/members/MembersDialog"
+import { ShareLinksDialog } from "@/components/share/ShareLinksDialog"
 
 export function GlobalSidebar() {
   const { uploadFile, moveFile, moveFolder } = useDataroomStore()
@@ -27,6 +28,7 @@ export function GlobalSidebar() {
   const [isOsDrag, setIsOsDrag] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
   const [membersOpen, setMembersOpen] = useState(false)
+  const [shareOpen, setShareOpen] = useState(false)
   const [isDark, setIsDark] = useState(() => {
     const stored = localStorage.getItem("theme")
     if (stored) return stored === "dark"
@@ -105,6 +107,10 @@ export function GlobalSidebar() {
                   <Users className="h-4 w-4 mr-2" />
                   Members
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShareOpen(true)}>
+                  <Link2 className="h-4 w-4 mr-2" />
+                  Share links
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => logout()} className="text-destructive focus:text-destructive">
                   <LogOut className="h-4 w-4 mr-2" />
@@ -163,6 +169,7 @@ export function GlobalSidebar() {
       </div>
 
       <MembersDialog open={membersOpen} onClose={() => setMembersOpen(false)} />
+      <ShareLinksDialog open={shareOpen} onClose={() => setShareOpen(false)} />
     </aside>
   )
 }
