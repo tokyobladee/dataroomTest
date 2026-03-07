@@ -1,7 +1,24 @@
 from flask import Blueprint, g, jsonify, request
+from firebase_admin import auth as firebase_auth
 from middleware.auth import require_auth
 
 bp = Blueprint("members", __name__, url_prefix="/api/datarooms/<dataroom_id>/members")
+
+
+def _enrich_members(members):
+    """Add email and display_name from Firebase to each member dict."""
+    result = []
+    for m in members:
+        d = m.__dict__.copy()
+        try:
+            fb_user = firebase_auth.get_user(m.user_uid)
+            d["email"] = fb_user.email
+            d["display_name"] = fb_user.display_name
+        except Exception:
+            d["email"] = None
+            d["display_name"] = None
+        result.append(d)
+    return result
 
 
 @bp.route("", methods=["GET"])
@@ -13,7 +30,7 @@ def list_members(dataroom_id: str):
         members = svc.list(dataroom_id, g.user_uid)
     except PermissionError as e:
         return jsonify({"error": str(e)}), 403
-    return jsonify([m.__dict__ for m in members])
+    return jsonify(_enrich_members(members))
 
 
 @bp.route("", methods=["POST"])
@@ -21,10 +38,17 @@ def list_members(dataroom_id: str):
 def invite_member(dataroom_id: str):
     from container import get_member_service
     data = request.get_json(force=True)
-    invitee_uid = (data.get("userUid") or "").strip()
+    email = (data.get("email") or "").strip()
     role = (data.get("role") or "viewer").strip()
-    if not invitee_uid:
-        return jsonify({"error": "userUid is required"}), 400
+    if not email:
+        return jsonify({"error": "email is required"}), 400
+    try:
+        fb_user = firebase_auth.get_user_by_email(email)
+        invitee_uid = fb_user.uid
+    except firebase_auth.UserNotFoundError:
+        return jsonify({"error": f"No user found with email {email}"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
     svc = get_member_service()
     try:
         member = svc.invite(dataroom_id, invitee_uid, role, g.user_uid)
@@ -32,7 +56,10 @@ def invite_member(dataroom_id: str):
         return jsonify({"error": str(e)}), 403
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
-    return jsonify(member.__dict__), 201
+    d = member.__dict__.copy()
+    d["email"] = fb_user.email
+    d["display_name"] = fb_user.display_name
+    return jsonify(d), 201
 
 
 @bp.route("/<member_uid>", methods=["PATCH"])
@@ -45,7 +72,7 @@ def update_role(dataroom_id: str, member_uid: str):
         return jsonify({"error": "role is required"}), 400
     svc = get_member_service()
     try:
-        member = svc.change_role(dataroom_id, member_uid, role, g.user_uid)
+        member = svc.update_role(dataroom_id, member_uid, role, g.user_uid)
     except PermissionError as e:
         return jsonify({"error": str(e)}), 403
     except ValueError as e:

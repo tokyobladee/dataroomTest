@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { User, Upload, Sun, Moon, LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react"
+import { User, Upload, Sun, Moon, LogOut, PanelLeftClose, PanelLeftOpen, Users } from "lucide-react"
 import { useDataroomStore } from "@/stores/dataroomStore"
 import { useAuthStore } from "@/stores/authStore"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -17,6 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { MembersDialog } from "@/components/members/MembersDialog"
 
 export function GlobalSidebar() {
   const { uploadFile, moveFile, moveFolder } = useDataroomStore()
@@ -25,6 +26,7 @@ export function GlobalSidebar() {
   const [isDragOver, setIsDragOver] = useState(false)
   const [isOsDrag, setIsOsDrag] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
+  const [membersOpen, setMembersOpen] = useState(false)
   const [isDark, setIsDark] = useState(() => {
     const stored = localStorage.getItem("theme")
     if (stored) return stored === "dark"
@@ -99,6 +101,11 @@ export function GlobalSidebar() {
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-52">
+                <DropdownMenuItem onClick={() => setMembersOpen(true)}>
+                  <Users className="h-4 w-4 mr-2" />
+                  Members
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => logout()} className="text-destructive focus:text-destructive">
                   <LogOut className="h-4 w-4 mr-2" />
                   Sign out
@@ -154,6 +161,8 @@ export function GlobalSidebar() {
           </div>
         </ScrollArea>
       </div>
+
+      <MembersDialog open={membersOpen} onClose={() => setMembersOpen(false)} />
     </aside>
   )
 }
