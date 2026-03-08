@@ -79,13 +79,14 @@ export function FolderTree() {
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
-      {/* Root "All files" row — stops propagation so GlobalSidebar overlay hides when hovering here */}
+      {/* Home row */}
       <div
         className={cn(
-          "flex items-center gap-1 rounded-md py-1.5 px-2 cursor-pointer select-none text-sm hover:bg-accent",
+          "group flex items-center gap-1 rounded-md py-1.5 cursor-pointer select-none text-sm hover:bg-accent w-full min-w-0 pr-2",
           isRootActive && "bg-accent font-medium",
           isDragOverAllFiles && "bg-primary/10 ring-1 ring-inset ring-primary/50"
         )}
+        style={{ paddingLeft: "8px" }}
         onClick={() => navigateFolder(null)}
         onDragEnter={handleAllFilesDragEnter}
         onDragLeave={(e) => handleAllFilesDragLeave(e)}
@@ -94,18 +95,13 @@ export function FolderTree() {
       >
         <span className="h-4 w-4 shrink-0 invisible" />
         <Home className="h-4 w-4 shrink-0 text-muted-foreground" />
-        <span className="flex-1 truncate ml-1">All files</span>
-      </div>
-
-      <div className="flex items-center justify-between px-2 py-1 mt-1">
-        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-          Folders
-        </span>
+        <span className="flex-1 truncate ml-1 min-w-0">Home</span>
         <Button
           variant="ghost"
           size="icon"
-          className="h-5 w-5"
-          onClick={() => setCreateOpen(true)}
+          className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+          onClick={(e) => { e.stopPropagation(); setCreateOpen(true) }}
+          title="New folder"
         >
           <Plus className="h-3.5 w-3.5" />
         </Button>

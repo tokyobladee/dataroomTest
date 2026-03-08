@@ -209,7 +209,7 @@ export function GlobalSidebar() {
         {isDragOver && isOsDrag && (
           <div className="absolute inset-0 z-20 pointer-events-none rounded-lg border-2 border-dashed border-primary bg-primary/5 flex flex-col items-center justify-center gap-2">
             <Upload className="h-5 w-5 text-primary" />
-            <p className="text-xs font-semibold text-primary text-center px-3">Drop to add to All files</p>
+            <p className="text-xs font-semibold text-primary text-center px-3">Drop to add to Home</p>
           </div>
         )}
         <div className="h-full overflow-y-auto overflow-x-hidden scrollbar-thin">
