@@ -11,7 +11,7 @@ import { getDragItem, isInternalDrag } from "@/lib/dragItem"
 import { cn } from "@/lib/utils"
 
 export function FolderTree() {
-  const { folders, files, activeFolderId, createFolder, uploadFile, moveFile, moveFolder } = useDataroomStore()
+  const { folders, files, activeFolderId, createFolder, uploadFile, moveFile, moveFolder, clearSelection } = useDataroomStore()
   const navigateFolder = useNavigateFolder()
   const [createOpen, setCreateOpen] = useState(false)
   const [isDragOverAllFiles, setIsDragOverAllFiles] = useState(false)
@@ -32,6 +32,7 @@ export function FolderTree() {
     if (item) {
       const items = item.bulk ?? [item]
       await Promise.all(items.map(i => i.type === "file" ? moveFile(i.id, null) : moveFolder(i.id, null)))
+      clearSelection()
       return
     }
     await handleDroppedFiles(e.dataTransfer, (file) => uploadFile(file, null))
@@ -66,6 +67,7 @@ export function FolderTree() {
     if (item) {
       const items = item.bulk ?? [item]
       await Promise.all(items.map(i => i.type === "file" ? moveFile(i.id, null) : moveFolder(i.id, null)))
+      clearSelection()
       return
     }
     await handleDroppedFiles(e.dataTransfer, (file) => uploadFile(file, null))

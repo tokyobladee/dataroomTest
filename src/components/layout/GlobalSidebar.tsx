@@ -20,7 +20,7 @@ import { MembersDialog } from "@/components/members/MembersDialog"
 import { ShareLinksDialog } from "@/components/share/ShareLinksDialog"
 
 export function GlobalSidebar() {
-  const { uploadFile, moveFile, moveFolder, myRole } = useDataroomStore()
+  const { uploadFile, moveFile, moveFolder, clearSelection, myRole } = useDataroomStore()
   const isOwner = myRole === "owner"
   const { user, logout } = useAuthStore()
   const dragCounter = useRef(0)
@@ -67,6 +67,7 @@ export function GlobalSidebar() {
     if (item) {
       const items = item.bulk ?? [item]
       await Promise.all(items.map(i => i.type === "file" ? moveFile(i.id, null) : moveFolder(i.id, null)))
+      clearSelection()
       return
     }
     await handleDroppedFiles(e.dataTransfer, (file) => uploadFile(file, null))

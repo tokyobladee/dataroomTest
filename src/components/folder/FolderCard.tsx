@@ -33,7 +33,7 @@ interface Props {
 }
 
 export function FolderCard({ folder }: Props) {
-  const { createFolder, renameFolder, deleteFolder, moveFolder, moveFile, selectedIds, toggleSelected, uploadFile, myRole } =
+  const { createFolder, renameFolder, deleteFolder, moveFolder, moveFile, selectedIds, toggleSelected, clearSelection, uploadFile, myRole } =
     useDataroomStore()
   const isOwner = myRole === "owner"
   const navigateFolder = useNavigateFolder()
@@ -82,6 +82,7 @@ export function FolderCard({ folder }: Props) {
       await Promise.all(items.map(i =>
         i.type === "file" ? moveFile(i.id, folder.id) : (i.id !== folder.id ? moveFolder(i.id, folder.id) : Promise.resolve())
       ))
+      clearSelection()
       return
     }
     await handleDroppedFiles(e.dataTransfer, (file) => uploadFile(file, folder.id))
