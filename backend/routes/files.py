@@ -1,6 +1,7 @@
 from flask import Blueprint, g, jsonify, request, send_file
 import io
 from middleware.auth import require_auth
+from extensions import limiter
 
 bp = Blueprint("files", __name__, url_prefix="/api/datarooms/<dataroom_id>/files")
 
@@ -20,6 +21,7 @@ def list_files(dataroom_id: str):
 
 @bp.route("", methods=["POST"])
 @require_auth
+@limiter.limit("30 per minute")
 def upload_file(dataroom_id: str):
     from container import get_file_service
     if "file" not in request.files:

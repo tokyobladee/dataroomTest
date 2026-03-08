@@ -5,7 +5,7 @@ import firebase_admin
 from firebase_admin import credentials
 
 from config import configs as config_by_name
-from extensions import db
+from extensions import db, limiter
 
 
 def create_app(config_name: str | None = None) -> Flask:
@@ -17,6 +17,7 @@ def create_app(config_name: str | None = None) -> Flask:
 
     # --- Extensions ---
     db.init_app(app)
+    limiter.init_app(app)
     frontend_url = app.config.get("FRONTEND_URL", "http://localhost:5173")
     cors_origins_raw = app.config.get("CORS_ORIGINS", frontend_url)
     cors_origins = [o.strip() for o in cors_origins_raw.split(",") if o.strip()]

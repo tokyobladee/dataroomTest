@@ -1,6 +1,7 @@
 from urllib.parse import urlencode
 from flask import Blueprint, g, jsonify, redirect, request, current_app
 from middleware.auth import require_auth
+from extensions import limiter
 
 bp = Blueprint("drive", __name__, url_prefix="/api/drive")
 
@@ -62,6 +63,7 @@ def list_drive_files():
 
 @bp.route("/import", methods=["POST"])
 @require_auth
+@limiter.limit("30 per minute")
 def import_file():
     """Copy a Drive file into a dataroom folder."""
     from container import get_drive_service
