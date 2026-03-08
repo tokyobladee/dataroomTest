@@ -92,6 +92,7 @@ export function FolderCard({ folder }: Props) {
   return (
     <>
       <tr
+        data-item-id={folder.id}
         draggable
         onDragStart={(e) => { e.stopPropagation(); setDragItem(e, { id: folder.id, type: "folder" }) }}
         className={cn(

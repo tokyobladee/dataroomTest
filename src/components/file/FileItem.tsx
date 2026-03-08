@@ -60,6 +60,7 @@ export function FileItem({ file }: Props) {
   return (
     <>
       <tr
+        data-item-id={file.id}
         draggable
         onDragStart={(e) => { e.stopPropagation(); setDragItem(e, { id: file.id, type: "file" }) }}
         className={cn(

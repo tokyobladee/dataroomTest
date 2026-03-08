@@ -1,4 +1,5 @@
 import { useRef, useState } from "react"
+import { useRubberBand } from "@/lib/useRubberBand"
 import { Check, FileText, Folder as FolderIcon, ChevronRight, Search, X, Upload, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
 import { useDataroomStore } from "@/stores/dataroomStore"
 import { useNavigateFolder } from "@/lib/useNavigateFolder"
@@ -23,6 +24,8 @@ export function FileList() {
   const [sortKey, setSortKey] = useState<SortKey>("name")
   const [sortDir, setSortDir] = useState<SortDir>("asc")
   const dragCounter = useRef(0)
+  const tableContainerRef = useRef<HTMLDivElement>(null)
+  const { onMouseDown: onRubberBandMouseDown, displayRect } = useRubberBand(tableContainerRef, selectAll)
 
   const trimmedQuery = query.trim().toLowerCase()
   const isSearching = trimmedQuery.length > 0
@@ -199,7 +202,17 @@ export function FileList() {
             </div>
           </div>
 
-          <div className="relative flex flex-col flex-1 min-h-0 overflow-auto">
+          <div
+            ref={tableContainerRef}
+            className="relative flex flex-col flex-1 min-h-0 overflow-auto"
+            onMouseDown={onRubberBandMouseDown}
+          >
+            {displayRect && displayRect.width > 4 && displayRect.height > 4 && (
+              <div
+                className="fixed pointer-events-none z-30 border border-primary/60 bg-primary/10 rounded-sm"
+                style={{ left: displayRect.left, top: displayRect.top, width: displayRect.width, height: displayRect.height }}
+              />
+            )}
             {isDragOver && isOsDrag && (
               <div className="absolute inset-0 z-20 pointer-events-none rounded-xl border-2 border-dashed border-primary bg-primary/5 flex flex-col items-center justify-center gap-3">
                 <div className="rounded-full bg-primary/10 p-4">
