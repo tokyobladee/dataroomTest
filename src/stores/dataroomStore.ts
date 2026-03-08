@@ -58,6 +58,8 @@ interface DataroomState {
   openFile: (id: string) => Promise<void>
   downloadFile: (id: string) => Promise<void>
   importFromDrive: (driveFileIds: string[]) => Promise<void>
+  downloadFolderAsZip: (folderId: string, folderName: string) => Promise<void>
+  downloadSelectionAsZip: () => Promise<void>
   setPreviewFile: (id: string | null) => void
   setDragOverFolder: (id: string | null) => void
 
@@ -299,6 +301,22 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
       })
       set((s) => ({ files: [...s.files, mapFile(raw)] }))
     }
+  },
+
+  downloadFolderAsZip: async (folderId, folderName) => {
+    const { dataroomId, folders, files } = get()
+    if (!dataroomId) return
+    const { collectFolderEntries, buildAndDownloadZip } = await import("@/lib/downloadZip")
+    const entries = collectFolderEntries(folderId, folders, files)
+    await buildAndDownloadZip(dataroomId, entries, folderName)
+  },
+
+  downloadSelectionAsZip: async () => {
+    const { dataroomId, selectedIds, folders, files } = get()
+    if (!dataroomId) return
+    const { collectSelectionEntries, buildAndDownloadZip } = await import("@/lib/downloadZip")
+    const entries = collectSelectionEntries(selectedIds, folders, files)
+    await buildAndDownloadZip(dataroomId, entries, "download")
   },
 
   setPreviewFile: (id) => set({ previewFileId: id }),

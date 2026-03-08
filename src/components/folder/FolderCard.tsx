@@ -1,5 +1,5 @@
 import { useRef, useState } from "react"
-import { Folder, MoreHorizontal, Plus, Pencil, Trash2, Check, ChevronRight, Link2 } from "lucide-react"
+import { Folder, MoreHorizontal, Plus, Pencil, Trash2, Check, ChevronRight, Link2, Download } from "lucide-react"
 import type { Folder as FolderType } from "@/types"
 import { useDataroomStore } from "@/stores/dataroomStore"
 import { useNavigateFolder } from "@/lib/useNavigateFolder"
@@ -33,7 +33,7 @@ interface Props {
 }
 
 export function FolderCard({ folder }: Props) {
-  const { createFolder, renameFolder, deleteFolder, moveFolder, moveFile, selectedIds, toggleSelected, clearSelection, uploadFile, myRole } =
+  const { createFolder, renameFolder, deleteFolder, moveFolder, moveFile, selectedIds, toggleSelected, clearSelection, uploadFile, myRole, downloadFolderAsZip } =
     useDataroomStore()
   const isOwner = myRole === "owner"
   const navigateFolder = useNavigateFolder()
@@ -169,6 +169,10 @@ export function FolderCard({ folder }: Props) {
               <DropdownMenuItem onClick={() => setRenameOpen(true)}>
                 <Pencil className="h-4 w-4 mr-2" />
                 Rename
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => { toast.promise(downloadFolderAsZip(folder.id, folder.name), { loading: "Preparing ZIP…", success: "Downloaded", error: "Failed to download" }) }}>
+                <Download className="h-4 w-4 mr-2" />
+                Download as ZIP
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem

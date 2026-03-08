@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Trash2, X } from "lucide-react"
+import { Trash2, X, Download } from "lucide-react"
 import { useDataroomStore } from "@/stores/dataroomStore"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
@@ -20,7 +20,7 @@ interface Props {
 }
 
 export function SelectionBar({ confirmOpen: externalOpen, onConfirmOpenChange }: Props) {
-  const { selectedIds, clearSelection, deleteSelected } = useDataroomStore()
+  const { selectedIds, clearSelection, deleteSelected, downloadSelectionAsZip } = useDataroomStore()
   const [internalOpen, setInternalOpen] = useState(false)
 
   const confirmOpen = externalOpen ?? internalOpen
@@ -41,6 +41,16 @@ export function SelectionBar({ confirmOpen: externalOpen, onConfirmOpenChange }:
         <span className="text-sm font-medium">
           {selectedIds.length} selected
         </span>
+        <div className="h-4 w-px bg-border" />
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-2"
+          onClick={() => toast.promise(downloadSelectionAsZip(), { loading: "Preparing ZIP…", success: "Downloaded", error: "Failed to download" })}
+        >
+          <Download className="h-4 w-4" />
+          Download
+        </Button>
         <div className="h-4 w-px bg-border" />
         <Button
           variant="ghost"

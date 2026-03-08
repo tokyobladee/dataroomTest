@@ -8,6 +8,7 @@ import {
   Pencil,
   Trash2,
   Link2,
+  Download,
 } from "lucide-react"
 import type { Folder as FolderType } from "@/types"
 import { useDataroomStore } from "@/stores/dataroomStore"
@@ -58,6 +59,7 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
     deleteFolder,
     uploadFile,
     myRole,
+    downloadFolderAsZip,
   } = useDataroomStore()
   const isOwner = myRole === "owner"
   const navigateFolder = useNavigateFolder()
@@ -181,6 +183,10 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
             <DropdownMenuItem onClick={() => setRenameOpen(true)}>
               <Pencil className="h-4 w-4 mr-2" />
               Rename
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => { toast.promise(downloadFolderAsZip(folder.id, folder.name), { loading: "Preparing ZIP…", success: "Downloaded", error: "Failed to download" }) }}>
+              <Download className="h-4 w-4 mr-2" />
+              Download as ZIP
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
