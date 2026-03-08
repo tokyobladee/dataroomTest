@@ -49,6 +49,7 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
     activeFolderId,
     expandedFolderIds,
     files,
+    dragOverFolderId,
     toggleFolderExpanded,
     createFolder,
     moveFolder,
@@ -118,7 +119,7 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
         className={cn(
           "group relative flex items-center gap-1 rounded-md py-1.5 cursor-pointer select-none text-sm hover:bg-accent w-full min-w-0 pr-2 hover:pr-7",
           isActive && "bg-accent font-medium",
-          isDragOver && "bg-primary/10 ring-1 ring-inset ring-primary/50"
+          (isDragOver || dragOverFolderId === folder.id) && "bg-primary/10 ring-1 ring-inset ring-primary/50"
         )}
         style={{ paddingLeft: `${8 + depth * 12}px` }}
         onClick={() => navigateFolder(folder.id)}

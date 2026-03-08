@@ -38,6 +38,7 @@ interface DataroomState {
   expandedFolderIds: string[]
   selectedIds: string[]
   previewFileId: string | null
+  dragOverFolderId: string | null
   isLoading: boolean
 
   resetStore: () => void
@@ -58,6 +59,7 @@ interface DataroomState {
   downloadFile: (id: string) => Promise<void>
   importFromDrive: (driveFileIds: string[]) => Promise<void>
   setPreviewFile: (id: string | null) => void
+  setDragOverFolder: (id: string | null) => void
 
   toggleSelected: (id: string) => void
   selectAll: (ids: string[]) => void
@@ -75,6 +77,7 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
   expandedFolderIds: [],
   selectedIds: [],
   previewFileId: null,
+  dragOverFolderId: null,
   isLoading: false,
 
   resetStore: () => set({
@@ -299,6 +302,7 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
   },
 
   setPreviewFile: (id) => set({ previewFileId: id }),
+  setDragOverFolder: (id) => set({ dragOverFolderId: id }),
 
   // ----------------------------------------------------------------
   // Selection

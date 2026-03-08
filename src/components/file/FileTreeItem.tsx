@@ -1,4 +1,4 @@
-import { useRef, useState } from "react"
+import { useState } from "react"
 import { FileText, MoreHorizontal, Pencil, Trash2 } from "lucide-react"
 import type { DataroomFile } from "@/types"
 import { useDataroomStore } from "@/stores/dataroomStore"
@@ -26,17 +26,19 @@ import {
 import { RenameFileDialog } from "./RenameFileDialog"
 import { toast } from "sonner"
 
+// Shared across all FileTreeItem instances so that moving between sibling files
+// in the same folder doesn't flash-clear the parent folder highlight.
+let _clearHighlightTimer: ReturnType<typeof setTimeout> | null = null
+
 interface Props {
   file: DataroomFile
   depth: number
 }
 
 export function FileTreeItem({ file, depth }: Props) {
-  const { renameFile, deleteFile, previewFileId, setPreviewFile, uploadFile, moveFile, moveFolder } = useDataroomStore()
+  const { renameFile, deleteFile, previewFileId, setPreviewFile, uploadFile, moveFile, moveFolder, setDragOverFolder } = useDataroomStore()
   const [renameOpen, setRenameOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
-  const [isDragOver, setIsDragOver] = useState(false)
-  const dragCounter = useRef(0)
 
   const isPreviewed = previewFileId === file.id
   const targetFolderId = file.folderId
@@ -45,14 +47,18 @@ export function FileTreeItem({ file, depth }: Props) {
     if (!isFileDrag(e) && !isInternalDrag(e)) return
     e.preventDefault()
     e.stopPropagation()
-    dragCounter.current++
-    setIsDragOver(true)
+    if (_clearHighlightTimer) { clearTimeout(_clearHighlightTimer); _clearHighlightTimer = null }
+    if (targetFolderId) setDragOverFolder(targetFolderId)
   }
 
   function handleDragLeave(e: React.DragEvent) {
     e.stopPropagation()
-    dragCounter.current--
-    if (dragCounter.current === 0) setIsDragOver(false)
+    const related = e.relatedTarget as Node | null
+    if (related && (e.currentTarget as HTMLElement).contains(related)) return
+    _clearHighlightTimer = setTimeout(() => {
+      useDataroomStore.getState().setDragOverFolder(null)
+      _clearHighlightTimer = null
+    }, 0)
   }
 
   function handleDragOver(e: React.DragEvent) {
@@ -64,8 +70,8 @@ export function FileTreeItem({ file, depth }: Props) {
   async function handleDrop(e: React.DragEvent) {
     e.preventDefault()
     e.stopPropagation()
-    dragCounter.current = 0
-    setIsDragOver(false)
+    if (_clearHighlightTimer) { clearTimeout(_clearHighlightTimer); _clearHighlightTimer = null }
+    setDragOverFolder(null)
     const item = getDragItem(e)
     if (item) {
       const items = item.bulk ?? [item]
@@ -88,8 +94,7 @@ export function FileTreeItem({ file, depth }: Props) {
         onDrop={handleDrop}
         className={cn(
           "group flex items-center gap-1 rounded-md py-1.5 cursor-pointer select-none text-sm hover:bg-accent",
-          isPreviewed && "bg-accent font-medium",
-          isDragOver && "bg-primary/10 ring-1 ring-inset ring-primary/50"
+          isPreviewed && "bg-accent font-medium"
         )}
         style={{ paddingLeft: `${8 + depth * 12}px`, paddingRight: "8px" }}
         onClick={() => setPreviewFile(isPreviewed ? null : file.id)}
