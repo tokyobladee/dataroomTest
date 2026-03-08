@@ -30,6 +30,7 @@ function mapFile(r: Record<string, unknown>): DataroomFile {
 
 interface DataroomState {
   dataroomId: string | null
+  dataroomName: string | null
   myRole: string | null
   folders: Folder[]
   files: DataroomFile[]
@@ -65,6 +66,7 @@ interface DataroomState {
 
 export const useDataroomStore = create<DataroomState>((set, get) => ({
   dataroomId: null,
+  dataroomName: null,
   myRole: null,
   folders: [],
   files: [],
@@ -99,6 +101,7 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
       const me = rawMembers.find((m) => m.user_uid === myUid)
       set({
         dataroomId,
+        dataroomName: (rooms[0].name as string) ?? null,
         myRole: (me?.role as string) ?? null,
         folders: rawFolders.map(mapFolder),
         files: rawFiles.map(mapFile),

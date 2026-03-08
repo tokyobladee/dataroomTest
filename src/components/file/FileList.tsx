@@ -14,7 +14,7 @@ type SortKey = "name" | "size" | "date"
 type SortDir = "asc" | "desc"
 
 export function FileList() {
-  const { files, folders, activeFolderId, uploadFile, moveFile, moveFolder, selectedIds, selectAll, clearSelection, setPreviewFile, isLoading } = useDataroomStore()
+  const { files, folders, activeFolderId, dataroomName, uploadFile, moveFile, moveFolder, selectedIds, selectAll, clearSelection, setPreviewFile, isLoading } = useDataroomStore()
   const navigateFolder = useNavigateFolder()
   const [isDragOver, setIsDragOver] = useState(false)
   const [isOsDrag, setIsOsDrag] = useState(false)
@@ -155,7 +155,7 @@ export function FileList() {
                 className="hover:text-foreground transition-colors"
                 onClick={() => navigateFolder(null)}
               >
-                All files
+                {dataroomName ?? "All files"}
               </button>
               {breadcrumb.map((crumb) => (
                 <span key={crumb.id} className="flex items-center gap-1">
@@ -169,10 +169,10 @@ export function FileList() {
                 </span>
               ))}
             </nav>
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex items-baseline justify-between gap-3">
               <div className="flex items-baseline gap-2">
                 <h2 className="text-lg font-semibold">
-                  {activeFolder ? activeFolder.name : "All files"}
+                  {activeFolder ? activeFolder.name : (dataroomName ?? "All files")}
                 </h2>
                 <span className="text-sm text-muted-foreground">
                   {rawSubfolders.length > 0 && `${rawSubfolders.length} folder${rawSubfolders.length > 1 ? "s" : ""}`}
