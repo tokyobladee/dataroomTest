@@ -166,7 +166,7 @@ export function GlobalSidebar() {
             <p className="text-xs font-semibold text-primary text-center px-3">Drop to add to All files</p>
           </div>
         )}
-        <div className="h-full overflow-y-auto overflow-x-hidden">
+        <div className="h-full overflow-y-auto overflow-x-hidden scrollbar-thin">
           <div className="p-2">
             <FolderTree />
           </div>

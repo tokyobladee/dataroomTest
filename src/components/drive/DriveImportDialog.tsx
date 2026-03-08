@@ -234,7 +234,7 @@ export function DriveImportDialog({ open, onClose }: Props) {
                 />
               </div>
 
-              <div className="w-full flex-1 overflow-y-auto overflow-x-hidden max-h-64 rounded-md border divide-y">
+              <div className="w-full flex-1 overflow-y-auto overflow-x-hidden max-h-64 rounded-md border divide-y scrollbar-thin">
                 {filtered.length === 0 && (
                   <p className="text-sm text-muted-foreground text-center py-8">No files found.</p>
                 )}
