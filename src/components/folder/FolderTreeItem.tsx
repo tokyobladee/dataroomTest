@@ -196,7 +196,7 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
 
       <div
         className="overflow-hidden transition-[max-height] duration-200 ease-in-out"
-        style={{ maxHeight: isExpanded ? `${(children.length + folderFiles.length) * 200}px` : 0 }}
+        style={{ maxHeight: isExpanded ? "9999px" : 0 }}
       >
         {children.map((child) => (
           <FolderTreeItem
