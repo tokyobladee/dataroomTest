@@ -141,9 +141,7 @@ class DriveService:
         params = {
             "pageSize": 50,
             "fields": "nextPageToken,files(id,name,size,mimeType,modifiedTime)",
-            # Exclude Google Workspace native formats (Docs, Sheets, Slides, etc.)
-            # — those require Export, not get_media, and cannot be stored as-is.
-            "q": "trashed=false and not mimeType contains 'application/vnd.google-apps'",
+            "q": "trashed=false and mimeType='application/pdf'",
         }
         if page_token:
             params["pageToken"] = page_token
@@ -167,6 +165,9 @@ class DriveService:
             fileId=drive_file_id,
             fields="id,name,size,mimeType"
         ).execute()
+
+        if meta.get("mimeType") != "application/pdf":
+            raise ValueError("Only PDF files can be imported")
 
         # Download file bytes
         request = drive.files().get_media(fileId=drive_file_id)
