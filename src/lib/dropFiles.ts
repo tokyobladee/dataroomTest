@@ -21,6 +21,17 @@ export async function handleDroppedFiles(
   }
 }
 
+export function collectDroppedFiles(dataTransfer: DataTransfer): File[] {
+  const files = Array.from(dataTransfer.files).filter((f) => f.type === "application/pdf")
+  const rejected = dataTransfer.files.length - files.length
+
+  if (rejected > 0) {
+    toast.error(`${rejected} file${rejected > 1 ? "s" : ""} skipped — only PDF files are supported`)
+  }
+
+  return files
+}
+
 export function isFileDrag(e: React.DragEvent): boolean {
   return e.dataTransfer.types.includes("Files")
 }

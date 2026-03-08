@@ -4,7 +4,7 @@ import type { DataroomFile } from "@/types"
 import { useDataroomStore } from "@/stores/dataroomStore"
 import { cn } from "@/lib/utils"
 import { setDragItem, getDragItem, isInternalDrag } from "@/lib/dragItem"
-import { handleDroppedFiles, isFileDrag } from "@/lib/dropFiles"
+import { collectDroppedFiles, isFileDrag } from "@/lib/dropFiles"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -36,7 +36,7 @@ interface Props {
 }
 
 export function FileTreeItem({ file, depth }: Props) {
-  const { renameFile, deleteFile, previewFileId, setPreviewFile, uploadFile, moveFile, moveFolder, setDragOverFolder } = useDataroomStore()
+  const { renameFile, deleteFile, previewFileId, setPreviewFile, uploadFiles, moveFiles, moveFolder, setDragOverFolder } = useDataroomStore()
   const [renameOpen, setRenameOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
 
@@ -75,12 +75,14 @@ export function FileTreeItem({ file, depth }: Props) {
     const item = getDragItem(e)
     if (item) {
       const items = item.bulk ?? [item]
-      await Promise.all(items.map(i =>
-        i.type === "file" ? moveFile(i.id, targetFolderId) : moveFolder(i.id, targetFolderId)
-      ))
+      const fileIds = items.filter((i) => i.type === "file").map((i) => i.id)
+      const folderItems = items.filter((i) => i.type === "folder")
+      if (fileIds.length > 0) await moveFiles(fileIds, targetFolderId)
+      await Promise.all(folderItems.map((i) => moveFolder(i.id, targetFolderId)))
       return
     }
-    await handleDroppedFiles(e.dataTransfer, (f) => uploadFile(f, targetFolderId))
+    const droppedFiles = collectDroppedFiles(e.dataTransfer)
+    await uploadFiles(droppedFiles, targetFolderId)
   }
 
   return (

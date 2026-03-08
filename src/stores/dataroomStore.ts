@@ -1,6 +1,8 @@
 import { create } from "zustand"
 import { apiFetch, apiJSON } from "@/lib/api"
 import type { DataroomFile, Folder } from "@/types"
+import { detectFileConflicts, generateCopyName } from "@/lib/fileConflicts"
+import type { FileConflict, ConflictResolution } from "@/lib/fileConflicts"
 
 // ---------- helpers: map snake_case API response → camelCase ----------
 
@@ -40,6 +42,11 @@ interface DataroomState {
   previewFileId: string | null
   dragOverFolderId: string | null
   isLoading: boolean
+  pendingFileConflicts: {
+    conflicts: FileConflict[]
+    resolve: (resolutions: Map<string, ConflictResolution>) => void
+    cancel: () => void
+  } | null
 
   resetStore: () => void
   initDataroom: () => Promise<void>
@@ -52,7 +59,9 @@ interface DataroomState {
   deleteFolder: (id: string) => Promise<void>
 
   uploadFile: (file: File, folderId: string | null) => Promise<void>
+  uploadFiles: (files: File[], folderId: string | null) => Promise<void>
   moveFile: (id: string, folderId: string | null) => Promise<void>
+  moveFiles: (fileIds: string[], targetFolderId: string | null) => Promise<void>
   renameFile: (id: string, name: string) => Promise<void>
   deleteFile: (id: string) => Promise<void>
   openFile: (id: string) => Promise<void>
@@ -67,6 +76,10 @@ interface DataroomState {
   selectAll: (ids: string[]) => void
   clearSelection: () => void
   deleteSelected: () => Promise<void>
+
+  _requestFileConflictResolution: (conflicts: FileConflict[]) => Promise<Map<string, ConflictResolution> | null>
+  resolveFileConflicts: (resolutions: Map<string, ConflictResolution>) => void
+  cancelFileConflicts: () => void
 }
 
 export const useDataroomStore = create<DataroomState>((set, get) => ({
@@ -81,6 +94,7 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
   previewFileId: null,
   dragOverFolderId: null,
   isLoading: false,
+  pendingFileConflicts: null,
 
   resetStore: () => set({
     dataroomId: null,
@@ -93,6 +107,7 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
     selectedIds: [],
     previewFileId: null,
     isLoading: true,
+    pendingFileConflicts: null,
   }),
 
   // ----------------------------------------------------------------
@@ -233,6 +248,32 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
     set((s) => ({ files: [...s.files, mapFile(raw)] }))
   },
 
+  uploadFiles: async (files, folderId) => {
+    const { files: existingFiles, _requestFileConflictResolution } = get()
+    const conflicts = detectFileConflicts(files.map((f) => f.name), folderId, existingFiles)
+
+    let finalFiles = files
+    if (conflicts.length > 0) {
+      const resolutions = await _requestFileConflictResolution(conflicts)
+      if (!resolutions) return
+
+      finalFiles = []
+      for (const file of files) {
+        const conflict = conflicts.find((c) => c.fileName === file.name)
+        if (!conflict) { finalFiles.push(file); continue }
+        const resolution = resolutions.get(conflict.id)
+        if (!resolution || resolution.action === "skip") continue
+        if (resolution.action === "copy") {
+          finalFiles.push(new File([file], conflict.copyName, { type: file.type }))
+        } else if (resolution.action === "rename") {
+          finalFiles.push(new File([file], resolution.newName, { type: file.type }))
+        }
+      }
+    }
+
+    await Promise.all(finalFiles.map((f) => get().uploadFile(f, folderId)))
+  },
+
   moveFile: async (id, folderId) => {
     const { dataroomId, files } = get()
     const file = files.find((f) => f.id === id)
@@ -243,6 +284,45 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
     )
     const updated = mapFile(raw)
     set((s) => ({ files: s.files.map((f) => (f.id === id ? updated : f)) }))
+  },
+
+  moveFiles: async (fileIds, targetFolderId) => {
+    const { files: existingFiles, _requestFileConflictResolution, moveFile, renameFile } = get()
+
+    // Files being moved that are not already in the target folder
+    const movingFiles = existingFiles.filter(
+      (f) => fileIds.includes(f.id) && f.folderId !== targetFolderId,
+    )
+    if (movingFiles.length === 0) return
+
+    const movingNames = movingFiles.map((f) => f.name)
+    // Exclude the files being moved themselves from conflict detection
+    const movingIds = new Set(movingFiles.map((f) => f.id))
+    const otherFiles = existingFiles.filter((f) => !movingIds.has(f.id))
+    const conflicts = detectFileConflicts(movingNames, targetFolderId, otherFiles)
+
+    let resolutions: Map<string, ConflictResolution> | null = null
+    if (conflicts.length > 0) {
+      resolutions = await _requestFileConflictResolution(conflicts)
+      if (!resolutions) return
+    }
+
+    for (const file of movingFiles) {
+      const conflict = conflicts.find((c) => c.fileName === file.name)
+      if (!conflict) {
+        await moveFile(file.id, targetFolderId)
+        continue
+      }
+      const resolution = resolutions!.get(conflict.id)
+      if (!resolution || resolution.action === "skip") continue
+      if (resolution.action === "copy") {
+        await moveFile(file.id, targetFolderId)
+        await renameFile(file.id, generateCopyName(file.name))
+      } else if (resolution.action === "rename") {
+        await moveFile(file.id, targetFolderId)
+        await renameFile(file.id, resolution.newName)
+      }
+    }
   },
 
   renameFile: async (id, name) => {
@@ -370,6 +450,35 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
       selectedIds: [],
       previewFileId: fileIdsToDelete.includes(s.previewFileId ?? "") ? null : s.previewFileId,
     }))
+  },
+
+  // ----------------------------------------------------------------
+  // File conflict resolution
+  // ----------------------------------------------------------------
+  _requestFileConflictResolution: (conflicts) => {
+    return new Promise<Map<string, ConflictResolution> | null>((resolve) => {
+      set({
+        pendingFileConflicts: {
+          conflicts,
+          resolve: (resolutions) => resolve(resolutions),
+          cancel: () => resolve(null),
+        },
+      })
+    })
+  },
+
+  resolveFileConflicts: (resolutions) => {
+    const { pendingFileConflicts } = get()
+    if (!pendingFileConflicts) return
+    pendingFileConflicts.resolve(resolutions)
+    set({ pendingFileConflicts: null })
+  },
+
+  cancelFileConflicts: () => {
+    const { pendingFileConflicts } = get()
+    if (!pendingFileConflicts) return
+    pendingFileConflicts.cancel()
+    set({ pendingFileConflicts: null })
   },
 }))
 

@@ -6,7 +6,7 @@ import { useAuthStore } from "@/stores/authStore"
 import { useNavigateFolder } from "@/lib/useNavigateFolder"
 import { FolderCard } from "@/components/folder/FolderCard"
 import { FileItem } from "./FileItem"
-import { handleDroppedFiles, isFileDrag } from "@/lib/dropFiles"
+import { collectDroppedFiles, isFileDrag } from "@/lib/dropFiles"
 import { getDragItem, isInternalDrag } from "@/lib/dragItem"
 import { cn } from "@/lib/utils"
 import type { Folder } from "@/types"
@@ -16,7 +16,7 @@ type SortKey = "name" | "size" | "date"
 type SortDir = "asc" | "desc"
 
 export function FileList() {
-  const { files, folders, activeFolderId, uploadFile, moveFile, moveFolder, selectedIds, selectAll, clearSelection, setPreviewFile, isLoading } = useDataroomStore()
+  const { files, folders, activeFolderId, uploadFiles, moveFiles, moveFolder, selectedIds, selectAll, clearSelection, setPreviewFile, isLoading } = useDataroomStore()
   const { user } = useAuthStore()
   const navigateFolder = useNavigateFolder()
   const [isDragOver, setIsDragOver] = useState(false)
@@ -99,10 +99,14 @@ export function FileList() {
     const item = getDragItem(e)
     if (item) {
       const items = item.bulk ?? [item]
-      await Promise.all(items.map(i => i.type === "file" ? moveFile(i.id, activeFolderId) : moveFolder(i.id, activeFolderId)))
+      const fileIds = items.filter((i) => i.type === "file").map((i) => i.id)
+      const folderItems = items.filter((i) => i.type === "folder")
+      if (fileIds.length > 0) await moveFiles(fileIds, activeFolderId)
+      await Promise.all(folderItems.map((i) => moveFolder(i.id, activeFolderId)))
       return
     }
-    await handleDroppedFiles(e.dataTransfer, (file) => uploadFile(file, activeFolderId))
+    const droppedFiles = collectDroppedFiles(e.dataTransfer)
+    await uploadFiles(droppedFiles, activeFolderId)
   }
 
   if (isLoading) {

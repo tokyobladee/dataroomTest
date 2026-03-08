@@ -7,7 +7,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { DriveImportDialog } from "@/components/drive/DriveImportDialog"
 
 export function UploadFab() {
-  const { uploadFile, activeFolderId } = useDataroomStore()
+  const { uploadFiles, activeFolderId } = useDataroomStore()
   const inputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
   const [driveOpen, setDriveOpen] = useState(false)
@@ -26,7 +26,7 @@ export function UploadFab() {
 
     setUploading(true)
     try {
-      await Promise.all(files.map((f) => uploadFile(f, activeFolderId)))
+      await uploadFiles(files, activeFolderId)
       toast.success(`${files.length} file${files.length > 1 ? "s" : ""} uploaded`)
     } catch {
       toast.error("Failed to upload files. Please try again.")

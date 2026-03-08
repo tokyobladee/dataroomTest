@@ -36,7 +36,7 @@ import {
 import { FolderDialog } from "./FolderDialog"
 import { ShareFolderDialog } from "@/components/share/ShareFolderDialog"
 import { FileTreeItem } from "@/components/file/FileTreeItem"
-import { handleDroppedFiles, isFileDrag } from "@/lib/dropFiles"
+import { collectDroppedFiles, isFileDrag } from "@/lib/dropFiles"
 import { setDragItem, getDragItem, isInternalDrag } from "@/lib/dragItem"
 
 interface Props {
@@ -54,10 +54,10 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
     toggleFolderExpanded,
     createFolder,
     moveFolder,
-    moveFile,
+    moveFiles,
     renameFolder,
     deleteFolder,
-    uploadFile,
+    uploadFiles,
     myRole,
     downloadFolderAsZip,
   } = useDataroomStore()
@@ -105,12 +105,14 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
     const item = getDragItem(e)
     if (item) {
       const items = item.bulk ?? [item]
-      await Promise.all(items.map(i =>
-        i.type === "file" ? moveFile(i.id, folder.id) : (i.id !== folder.id ? moveFolder(i.id, folder.id) : Promise.resolve())
-      ))
+      const fileIds = items.filter((i) => i.type === "file").map((i) => i.id)
+      const folderItems = items.filter((i) => i.type === "folder" && i.id !== folder.id)
+      if (fileIds.length > 0) await moveFiles(fileIds, folder.id)
+      await Promise.all(folderItems.map((i) => moveFolder(i.id, folder.id)))
       return
     }
-    await handleDroppedFiles(e.dataTransfer, (file) => uploadFile(file, folder.id))
+    const droppedFiles = collectDroppedFiles(e.dataTransfer)
+    await uploadFiles(droppedFiles, folder.id)
   }
 
   return (

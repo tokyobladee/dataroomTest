@@ -3,7 +3,7 @@ import { User, Upload, Sun, Moon, LogOut, PanelLeftClose, PanelLeftOpen, Users, 
 import { useDataroomStore } from "@/stores/dataroomStore"
 import { useAuthStore } from "@/stores/authStore"
 import { Separator } from "@/components/ui/separator"
-import { handleDroppedFiles, isFileDrag } from "@/lib/dropFiles"
+import { collectDroppedFiles, isFileDrag } from "@/lib/dropFiles"
 import { getDragItem, isInternalDrag } from "@/lib/dragItem"
 import { FolderTree } from "@/components/folder/FolderTree"
 import { Button } from "@/components/ui/button"
@@ -24,7 +24,7 @@ const SIDEBAR_MAX = 480
 const SIDEBAR_DEFAULT = 256
 
 export function GlobalSidebar() {
-  const { uploadFile, moveFile, moveFolder, clearSelection, myRole } = useDataroomStore()
+  const { uploadFiles, moveFiles, moveFolder, clearSelection, myRole } = useDataroomStore()
   const isOwner = myRole === "owner"
   const { user, logout } = useAuthStore()
   const dragCounter = useRef(0)
@@ -110,11 +110,15 @@ export function GlobalSidebar() {
     const item = getDragItem(e)
     if (item) {
       const items = item.bulk ?? [item]
-      await Promise.all(items.map(i => i.type === "file" ? moveFile(i.id, null) : moveFolder(i.id, null)))
+      const fileIds = items.filter((i) => i.type === "file").map((i) => i.id)
+      const folderItems = items.filter((i) => i.type === "folder")
+      if (fileIds.length > 0) await moveFiles(fileIds, null)
+      await Promise.all(folderItems.map((i) => moveFolder(i.id, null)))
       clearSelection()
       return
     }
-    await handleDroppedFiles(e.dataTransfer, (file) => uploadFile(file, null))
+    const droppedFiles = collectDroppedFiles(e.dataTransfer)
+    await uploadFiles(droppedFiles, null)
   }
 
   return (

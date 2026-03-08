@@ -5,7 +5,7 @@ import { useDataroomStore } from "@/stores/dataroomStore"
 import { useNavigateFolder } from "@/lib/useNavigateFolder"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
-import { handleDroppedFiles, isFileDrag } from "@/lib/dropFiles"
+import { collectDroppedFiles, isFileDrag } from "@/lib/dropFiles"
 import { setDragItem, getDragItem, isInternalDrag } from "@/lib/dragItem"
 import {
   DropdownMenu,
@@ -33,7 +33,7 @@ interface Props {
 }
 
 export function FolderCard({ folder }: Props) {
-  const { createFolder, renameFolder, deleteFolder, moveFolder, moveFile, selectedIds, toggleSelected, clearSelection, uploadFile, myRole, downloadFolderAsZip } =
+  const { createFolder, renameFolder, deleteFolder, moveFolder, moveFiles, selectedIds, toggleSelected, clearSelection, uploadFiles, myRole, downloadFolderAsZip } =
     useDataroomStore()
   const isOwner = myRole === "owner"
   const navigateFolder = useNavigateFolder()
@@ -79,13 +79,15 @@ export function FolderCard({ folder }: Props) {
     const item = getDragItem(e)
     if (item) {
       const items = item.bulk ?? [item]
-      await Promise.all(items.map(i =>
-        i.type === "file" ? moveFile(i.id, folder.id) : (i.id !== folder.id ? moveFolder(i.id, folder.id) : Promise.resolve())
-      ))
+      const fileIds = items.filter((i) => i.type === "file").map((i) => i.id)
+      const folderItems = items.filter((i) => i.type === "folder" && i.id !== folder.id)
+      if (fileIds.length > 0) await moveFiles(fileIds, folder.id)
+      await Promise.all(folderItems.map((i) => moveFolder(i.id, folder.id)))
       clearSelection()
       return
     }
-    await handleDroppedFiles(e.dataTransfer, (file) => uploadFile(file, folder.id))
+    const droppedFiles = collectDroppedFiles(e.dataTransfer)
+    await uploadFiles(droppedFiles, folder.id)
   }
 
   function formatDate(ts: number) {

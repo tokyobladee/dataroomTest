@@ -6,12 +6,12 @@ import { Button } from "@/components/ui/button"
 import { FolderTreeItem } from "./FolderTreeItem"
 import { FolderDialog } from "./FolderDialog"
 import { FileTreeItem } from "@/components/file/FileTreeItem"
-import { handleDroppedFiles, isFileDrag } from "@/lib/dropFiles"
+import { collectDroppedFiles, isFileDrag } from "@/lib/dropFiles"
 import { getDragItem, isInternalDrag } from "@/lib/dragItem"
 import { cn } from "@/lib/utils"
 
 export function FolderTree() {
-  const { folders, files, activeFolderId, createFolder, uploadFile, moveFile, moveFolder, clearSelection } = useDataroomStore()
+  const { folders, files, activeFolderId, createFolder, uploadFiles, moveFiles, moveFolder, clearSelection } = useDataroomStore()
   const navigateFolder = useNavigateFolder()
   const [createOpen, setCreateOpen] = useState(false)
   const [isDragOverAllFiles, setIsDragOverAllFiles] = useState(false)
@@ -31,11 +31,15 @@ export function FolderTree() {
     const item = getDragItem(e)
     if (item) {
       const items = item.bulk ?? [item]
-      await Promise.all(items.map(i => i.type === "file" ? moveFile(i.id, null) : moveFolder(i.id, null)))
+      const fileIds = items.filter((i) => i.type === "file").map((i) => i.id)
+      const folderItems = items.filter((i) => i.type === "folder")
+      if (fileIds.length > 0) await moveFiles(fileIds, null)
+      await Promise.all(folderItems.map((i) => moveFolder(i.id, null)))
       clearSelection()
       return
     }
-    await handleDroppedFiles(e.dataTransfer, (file) => uploadFile(file, null))
+    const droppedFiles = collectDroppedFiles(e.dataTransfer)
+    await uploadFiles(droppedFiles, null)
   }
 
   function handleAllFilesDragEnter(e: React.DragEvent) {
@@ -66,11 +70,15 @@ export function FolderTree() {
     const item = getDragItem(e)
     if (item) {
       const items = item.bulk ?? [item]
-      await Promise.all(items.map(i => i.type === "file" ? moveFile(i.id, null) : moveFolder(i.id, null)))
+      const fileIds = items.filter((i) => i.type === "file").map((i) => i.id)
+      const folderItems = items.filter((i) => i.type === "folder")
+      if (fileIds.length > 0) await moveFiles(fileIds, null)
+      await Promise.all(folderItems.map((i) => moveFolder(i.id, null)))
       clearSelection()
       return
     }
-    await handleDroppedFiles(e.dataTransfer, (file) => uploadFile(file, null))
+    const droppedFiles = collectDroppedFiles(e.dataTransfer)
+    await uploadFiles(droppedFiles, null)
   }
 
   return (

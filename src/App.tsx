@@ -9,6 +9,7 @@ import { DataroomPage } from "@/pages/DataroomPage"
 import { DriveCallbackPage } from "@/pages/DriveCallbackPage"
 import { SharePage } from "@/pages/SharePage"
 import { LoginPage } from "@/components/auth/LoginPage"
+import { FileConflictDialog } from "@/components/file/FileConflictDialog"
 
 export default function App() {
   const { initDataroom, resetStore, isLoading: dataroomLoading } = useDataroomStore()
@@ -58,6 +59,7 @@ export default function App() {
         </Routes>
       </GlobalLayout>
       <Toaster />
+      <FileConflictDialog />
     </TooltipProvider>
   )
 }

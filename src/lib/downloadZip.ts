@@ -2,7 +2,7 @@ import JSZip from "jszip"
 import { apiFetch } from "@/lib/api"
 import type { DataroomFile, Folder } from "@/types"
 
-interface ZipEntry {
+export interface ZipEntry {
   path: string
   fileId: string
 }
@@ -50,6 +50,16 @@ export function collectSelectionEntries(
   return entries
 }
 
+function uniquePath(desired: string, used: Set<string>): string {
+  if (!used.has(desired)) return desired
+  const dot = desired.lastIndexOf(".")
+  const base = dot !== -1 ? desired.slice(0, dot) : desired
+  const ext = dot !== -1 ? desired.slice(dot) : ""
+  let i = 1
+  while (used.has(`${base} (${i})${ext}`)) i++
+  return `${base} (${i})${ext}`
+}
+
 export async function buildAndDownloadZip(
   dataroomId: string,
   entries: ZipEntry[],
@@ -58,8 +68,15 @@ export async function buildAndDownloadZip(
   if (entries.length === 0) return
   const zip = new JSZip()
 
+  const used = new Set<string>()
+  const resolved = entries.map((entry) => {
+    const path = uniquePath(entry.path, used)
+    used.add(path)
+    return { path, fileId: entry.fileId }
+  })
+
   await Promise.all(
-    entries.map(async ({ path, fileId }) => {
+    resolved.map(async ({ path, fileId }) => {
       const res = await apiFetch(`/api/datarooms/${dataroomId}/files/${fileId}`)
       const blob = await res.blob()
       zip.file(path, blob)
