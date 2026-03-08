@@ -132,8 +132,8 @@ export function FolderCard({ folder }: Props) {
             )}
           </button>
         </td>
-        <td className="px-3 py-2.5 cursor-pointer" onClick={() => navigateFolder(folder.id)}>
-          <div className="flex items-center gap-2">
+        <td className="px-3 py-2.5 cursor-pointer max-w-0 w-full" onClick={() => navigateFolder(folder.id)}>
+          <div className="flex items-center gap-2 min-w-0">
             <Folder className="h-4 w-4 shrink-0 text-muted-foreground" />
             <span className="font-medium truncate">{folder.name}</span>
             <ChevronRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -147,7 +147,7 @@ export function FolderCard({ folder }: Props) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity"
+                className="h-7 w-7 opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity focus-visible:outline-none focus-visible:ring-0"
               >
                 <MoreHorizontal className="h-4 w-4" />
               </Button>

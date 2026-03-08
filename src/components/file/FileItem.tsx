@@ -94,8 +94,8 @@ export function FileItem({ file }: Props) {
             )}
           </button>
         </td>
-        <td className="px-3 py-2.5">
-          <div className="flex items-center gap-2">
+        <td className="px-3 py-2.5 max-w-0 w-full">
+          <div className="flex items-center gap-2 min-w-0">
             <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
             <span className="font-medium truncate">{file.name}</span>
           </div>
@@ -125,7 +125,7 @@ export function FileItem({ file }: Props) {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity"
+                  className="h-7 w-7 opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity focus-visible:outline-none focus-visible:ring-0"
                 >
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>

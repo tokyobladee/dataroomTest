@@ -98,7 +98,7 @@ export function FileTreeItem({ file, depth }: Props) {
 
         <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
 
-        <span className="flex-1 truncate ml-1 text-muted-foreground">{file.name}</span>
+        <span className="flex-1 truncate ml-1 min-w-0 text-muted-foreground">{file.name}</span>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>

@@ -116,11 +116,11 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
         draggable
         onDragStart={(e) => { e.stopPropagation(); setDragItem(e, { id: folder.id, type: "folder" }) }}
         className={cn(
-          "group relative flex items-center gap-1 rounded-md py-1.5 cursor-pointer select-none text-sm hover:bg-accent w-full min-w-0",
+          "group relative flex items-center gap-1 rounded-md py-1.5 cursor-pointer select-none text-sm hover:bg-accent w-full min-w-0 pr-2 hover:pr-7",
           isActive && "bg-accent font-medium",
           isDragOver && "bg-primary/10 ring-1 ring-inset ring-primary/50"
         )}
-        style={{ paddingLeft: `${8 + depth * 12}px`, paddingRight: "8px" }}
+        style={{ paddingLeft: `${8 + depth * 12}px` }}
         onClick={() => navigateFolder(folder.id)}
         onDragEnter={handleDragEnter}
         onDragLeave={(e) => handleDragLeave(e)}
@@ -145,7 +145,7 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
           }
         </span>
 
-        <span className="flex-1 truncate ml-1">{folder.name}</span>
+        <span className="flex-1 truncate ml-1 min-w-0">{folder.name}</span>
 
         {hasChildren && (
           <span className="text-xs text-muted-foreground/50 shrink-0 tabular-nums group-hover:invisible">
@@ -158,7 +158,7 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
             <Button
               variant="ghost"
               size="icon"
-              className="absolute right-1 top-1/2 -translate-y-1/2 h-5 w-5 opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity"
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-5 w-5 opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity focus-visible:outline-none focus-visible:ring-0"
             >
               <MoreHorizontal className="h-3 w-3" />
             </Button>
