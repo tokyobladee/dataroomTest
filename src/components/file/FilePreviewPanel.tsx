@@ -71,6 +71,8 @@ export function FilePreviewPanel() {
 
     function onMouseUp() {
       setDragging(false)
+      document.body.style.cursor = ""
+      document.body.style.userSelect = ""
       localStorage.setItem("previewWidth", String(currentWidth.current))
     }
 
@@ -87,6 +89,8 @@ export function FilePreviewPanel() {
     dragStartX.current = e.clientX
     dragStartWidth.current = width
     setDragging(true)
+    document.body.style.cursor = "col-resize"
+    document.body.style.userSelect = "none"
   }
 
   const isOpen = !!previewFileId && !!file
@@ -94,7 +98,8 @@ export function FilePreviewPanel() {
   return (
     <aside
       className={cn(
-        "flex flex-col shrink-0 bg-background h-screen sticky top-0 relative overflow-hidden transition-[width] duration-200",
+        "flex flex-col shrink-0 bg-background h-screen sticky top-0 relative overflow-hidden",
+        !dragging && "transition-[width] duration-200",
         isOpen && "border-l"
       )}
       style={{ width: isOpen ? width : 0 }}

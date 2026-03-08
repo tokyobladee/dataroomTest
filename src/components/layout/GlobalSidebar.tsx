@@ -19,6 +19,10 @@ import {
 import { MembersDialog } from "@/components/members/MembersDialog"
 import { ShareLinksDialog } from "@/components/share/ShareLinksDialog"
 
+const SIDEBAR_MIN = 180
+const SIDEBAR_MAX = 480
+const SIDEBAR_DEFAULT = 256
+
 export function GlobalSidebar() {
   const { uploadFile, moveFile, moveFolder, clearSelection, myRole } = useDataroomStore()
   const isOwner = myRole === "owner"
@@ -29,6 +33,14 @@ export function GlobalSidebar() {
   const [collapsed, setCollapsed] = useState(false)
   const [membersOpen, setMembersOpen] = useState(false)
   const [shareOpen, setShareOpen] = useState(false)
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    const stored = localStorage.getItem("sidebar-width")
+    return stored ? Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, parseInt(stored, 10))) : SIDEBAR_DEFAULT
+  })
+  const isResizing = useRef(false)
+  const resizeStartX = useRef(0)
+  const resizeStartWidth = useRef(0)
+  const [resizing, setResizing] = useState(false)
   const [isDark, setIsDark] = useState(() => {
     const stored = localStorage.getItem("theme")
     if (stored) return stored === "dark"
@@ -39,6 +51,38 @@ export function GlobalSidebar() {
     document.documentElement.classList.toggle("dark", isDark)
     localStorage.setItem("theme", isDark ? "dark" : "light")
   }, [isDark])
+
+  useEffect(() => {
+    function onMouseMove(e: MouseEvent) {
+      if (!isResizing.current) return
+      const newWidth = Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, resizeStartWidth.current + e.clientX - resizeStartX.current))
+      setSidebarWidth(newWidth)
+    }
+    function onMouseUp() {
+      if (!isResizing.current) return
+      isResizing.current = false
+      setResizing(false)
+      document.body.style.cursor = ""
+      document.body.style.userSelect = ""
+      setSidebarWidth((w) => { localStorage.setItem("sidebar-width", String(w)); return w })
+    }
+    document.addEventListener("mousemove", onMouseMove)
+    document.addEventListener("mouseup", onMouseUp)
+    return () => {
+      document.removeEventListener("mousemove", onMouseMove)
+      document.removeEventListener("mouseup", onMouseUp)
+    }
+  }, [])
+
+  function handleResizeStart(e: React.MouseEvent) {
+    e.preventDefault()
+    isResizing.current = true
+    setResizing(true)
+    resizeStartX.current = e.clientX
+    resizeStartWidth.current = sidebarWidth
+    document.body.style.cursor = "col-resize"
+    document.body.style.userSelect = "none"
+  }
 
   function handleDragEnter(e: React.DragEvent) {
     if (!isFileDrag(e) && !isInternalDrag(e)) return
@@ -76,9 +120,11 @@ export function GlobalSidebar() {
   return (
     <aside
       className={cn(
-        "flex flex-col shrink-0 border-r bg-background h-screen sticky top-0 overflow-hidden transition-[width] duration-200",
-        collapsed ? "w-12" : "w-64"
+        "relative flex flex-col shrink-0 border-r bg-background h-screen sticky top-0 overflow-hidden",
+        !resizing && "transition-[width] duration-200",
+        collapsed ? "w-12" : ""
       )}
+      style={collapsed ? undefined : { width: sidebarWidth }}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
@@ -175,6 +221,14 @@ export function GlobalSidebar() {
 
       <MembersDialog open={membersOpen} onClose={() => setMembersOpen(false)} />
       <ShareLinksDialog open={shareOpen} onClose={() => setShareOpen(false)} />
+
+      {/* Resize handle */}
+      {!collapsed && (
+        <div
+          className="absolute right-0 top-0 h-full w-1 cursor-col-resize hover:bg-primary/30 active:bg-primary/50 transition-colors z-20"
+          onMouseDown={handleResizeStart}
+        />
+      )}
     </aside>
   )
 }
