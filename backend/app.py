@@ -17,9 +17,12 @@ def create_app(config_name: str | None = None) -> Flask:
 
     # --- Extensions ---
     db.init_app(app)
+    frontend_url = app.config.get("FRONTEND_URL", "http://localhost:5173")
+    cors_origins_raw = app.config.get("CORS_ORIGINS", frontend_url)
+    cors_origins = [o.strip() for o in cors_origins_raw.split(",") if o.strip()]
     CORS(
         app,
-        resources={r"/api/*": {"origins": app.config.get("CORS_ORIGINS", "*")}},
+        resources={r"/api/*": {"origins": cors_origins}},
         allow_headers=["Authorization", "Content-Type"],
         methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     )
@@ -71,6 +74,10 @@ def create_app(config_name: str | None = None) -> Flask:
     def method_not_allowed(e):
         return jsonify({"error": "Method not allowed"}), 405
 
+    @app.errorhandler(413)
+    def request_entity_too_large(e):
+        return jsonify({"error": "File too large"}), 413
+
     @app.errorhandler(500)
     def internal_error(e):
         return jsonify({"error": "Internal server error"}), 500
@@ -78,7 +85,11 @@ def create_app(config_name: str | None = None) -> Flask:
     # --- Health check ---
     @app.get("/api/health")
     def health():
-        return jsonify({"status": "ok"})
+        try:
+            db.session.execute(db.text("SELECT 1"))
+            return jsonify({"status": "ok"})
+        except Exception as e:
+            return jsonify({"status": "error", "detail": str(e)}), 503
 
     return app
 

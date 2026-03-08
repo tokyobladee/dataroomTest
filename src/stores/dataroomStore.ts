@@ -31,7 +31,7 @@ function mapFile(r: Record<string, unknown>): DataroomFile {
 interface DataroomState {
   dataroomId: string | null
   dataroomName: string | null
-  myRole: string | null
+  myRole: "owner" | "editor" | "viewer" | null
   folders: Folder[]
   files: DataroomFile[]
   activeFolderId: string | null
@@ -102,7 +102,7 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
       set({
         dataroomId,
         dataroomName: (rooms[0].name as string) ?? null,
-        myRole: (me?.role as string) ?? null,
+        myRole: (me?.role as "owner" | "editor" | "viewer" | null) ?? null,
         folders: rawFolders.map(mapFolder),
         files: rawFiles.map(mapFile),
         isLoading: false,
@@ -254,12 +254,8 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
     const res = await apiFetch(`/api/datarooms/${dataroomId}/files/${id}`)
     const blob = await res.blob()
     const url = URL.createObjectURL(blob)
-    const tab = window.open(url, "_blank")
-    if (tab) {
-      tab.addEventListener("load", () => URL.revokeObjectURL(url))
-    } else {
-      setTimeout(() => URL.revokeObjectURL(url), 10_000)
-    }
+    window.open(url, "_blank")
+    setTimeout(() => URL.revokeObjectURL(url), 10_000)
   },
 
   downloadFile: async (id) => {

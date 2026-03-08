@@ -7,18 +7,23 @@ bp = Blueprint("members", __name__, url_prefix="/api/datarooms/<dataroom_id>/mem
 
 def _enrich_members(members):
     """Add email and display_name from Firebase to each member dict."""
-    result = []
+    if not members:
+        return []
+    uids = [m.user_uid for m in members]
+    fb_map: dict[str, firebase_auth.UserRecord] = {}
+    try:
+        for result in firebase_auth.get_users([firebase_auth.UidIdentifier(uid) for uid in uids]).users:
+            fb_map[result.uid] = result
+    except Exception:
+        pass
+    out = []
     for m in members:
         d = m.__dict__.copy()
-        try:
-            fb_user = firebase_auth.get_user(m.user_uid)
-            d["email"] = fb_user.email
-            d["display_name"] = fb_user.display_name
-        except Exception:
-            d["email"] = None
-            d["display_name"] = None
-        result.append(d)
-    return result
+        fb_user = fb_map.get(m.user_uid)
+        d["email"] = fb_user.email if fb_user else None
+        d["display_name"] = fb_user.display_name if fb_user else None
+        out.append(d)
+    return out
 
 
 @bp.route("", methods=["GET"])

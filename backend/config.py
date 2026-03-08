@@ -20,6 +20,10 @@ class Config:
     STORAGE_PATH = os.environ.get("STORAGE_PATH", "./uploads")
 
     FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173")
+    CORS_ORIGINS = os.environ.get("CORS_ORIGINS", os.environ.get("FRONTEND_URL", "http://localhost:5173"))
+
+    # 100 MB upload limit
+    MAX_CONTENT_LENGTH = int(os.environ.get("MAX_UPLOAD_MB", 100)) * 1024 * 1024
 
 
 class DevelopmentConfig(Config):
