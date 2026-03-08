@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react"
 import { User, Upload, Sun, Moon, LogOut, PanelLeftClose, PanelLeftOpen, Users, Link2 } from "lucide-react"
 import { useDataroomStore } from "@/stores/dataroomStore"
 import { useAuthStore } from "@/stores/authStore"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { handleDroppedFiles, isFileDrag } from "@/lib/dropFiles"
 import { getDragItem, isInternalDrag } from "@/lib/dragItem"
@@ -166,11 +165,11 @@ export function GlobalSidebar() {
             <p className="text-xs font-semibold text-primary text-center px-3">Drop to add to All files</p>
           </div>
         )}
-        <ScrollArea className="h-full">
+        <div className="h-full overflow-y-auto overflow-x-hidden">
           <div className="p-2">
             <FolderTree />
           </div>
-        </ScrollArea>
+        </div>
       </div>
 
       <MembersDialog open={membersOpen} onClose={() => setMembersOpen(false)} />

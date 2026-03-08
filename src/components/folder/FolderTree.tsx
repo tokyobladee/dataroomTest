@@ -73,7 +73,7 @@ export function FolderTree() {
 
   return (
     <div
-      className="relative flex flex-col gap-1"
+      className="relative flex flex-col gap-1 w-full overflow-hidden"
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
