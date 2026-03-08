@@ -11,12 +11,16 @@ import { SharePage } from "@/pages/SharePage"
 import { LoginPage } from "@/components/auth/LoginPage"
 
 export default function App() {
-  const { initDataroom, isLoading: dataroomLoading } = useDataroomStore()
+  const { initDataroom, resetStore, isLoading: dataroomLoading } = useDataroomStore()
   const { user, isLoading: authLoading } = useAuthStore()
 
   useEffect(() => {
-    if (user) initDataroom()
-  }, [user, initDataroom])
+    if (user) {
+      initDataroom()
+    } else {
+      resetStore()
+    }
+  }, [user, initDataroom, resetStore])
 
   // Pages accessible without auth
   if (window.location.pathname === "/drive/callback") {

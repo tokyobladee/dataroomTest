@@ -40,6 +40,7 @@ interface DataroomState {
   previewFileId: string | null
   isLoading: boolean
 
+  resetStore: () => void
   initDataroom: () => Promise<void>
 
   setActiveFolder: (id: string | null) => void
@@ -75,6 +76,19 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
   selectedIds: [],
   previewFileId: null,
   isLoading: false,
+
+  resetStore: () => set({
+    dataroomId: null,
+    dataroomName: null,
+    myRole: null,
+    folders: [],
+    files: [],
+    activeFolderId: null,
+    expandedFolderIds: [],
+    selectedIds: [],
+    previewFileId: null,
+    isLoading: true,
+  }),
 
   // ----------------------------------------------------------------
   // Init: get or create the user's first dataroom, then load content

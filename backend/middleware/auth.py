@@ -3,6 +3,9 @@ from flask import request, g, jsonify
 import firebase_admin
 from firebase_admin import auth as firebase_auth
 
+# Allow up to 10 seconds of clock skew between client and server
+_CLOCK_SKEW = 10
+
 
 def require_auth(f):
     """
@@ -16,8 +19,10 @@ def require_auth(f):
             return jsonify({"error": "Missing or invalid Authorization header"}), 401
         token = auth_header[len("Bearer "):]
         try:
-            decoded = firebase_auth.verify_id_token(token)
-        except firebase_admin.exceptions.FirebaseError:
+            decoded = firebase_auth.verify_id_token(token, clock_skew_seconds=_CLOCK_SKEW)
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error("verify_id_token failed: %s: %s", type(e).__name__, e)
             return jsonify({"error": "Invalid or expired token"}), 401
         g.user_uid = decoded["uid"]
         return f(*args, **kwargs)
@@ -36,7 +41,7 @@ def optional_auth(f):
         if auth_header.startswith("Bearer "):
             token = auth_header[len("Bearer "):]
             try:
-                decoded = firebase_auth.verify_id_token(token)
+                decoded = firebase_auth.verify_id_token(token, clock_skew_seconds=_CLOCK_SKEW)
                 g.user_uid = decoded["uid"]
             except Exception:
                 pass
