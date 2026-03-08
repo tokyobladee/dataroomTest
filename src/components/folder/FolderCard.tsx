@@ -78,8 +78,10 @@ export function FolderCard({ folder }: Props) {
     setIsDragOver(false)
     const item = getDragItem(e)
     if (item) {
-      if (item.type === "file") await moveFile(item.id, folder.id)
-      else if (item.id !== folder.id) await moveFolder(item.id, folder.id)
+      const items = item.bulk ?? [item]
+      await Promise.all(items.map(i =>
+        i.type === "file" ? moveFile(i.id, folder.id) : (i.id !== folder.id ? moveFolder(i.id, folder.id) : Promise.resolve())
+      ))
       return
     }
     await handleDroppedFiles(e.dataTransfer, (file) => uploadFile(file, folder.id))
@@ -94,7 +96,20 @@ export function FolderCard({ folder }: Props) {
       <tr
         data-item-id={folder.id}
         draggable
-        onDragStart={(e) => { e.stopPropagation(); setDragItem(e, { id: folder.id, type: "folder" }) }}
+        onDragStart={(e) => {
+          e.stopPropagation()
+          const { selectedIds, folders, files } = useDataroomStore.getState()
+          const item = { id: folder.id, type: "folder" as const }
+          if (selectedIds.includes(folder.id) && selectedIds.length > 1) {
+            const bulk = selectedIds.map(sid => ({
+              id: sid,
+              type: (folders.some(f => f.id === sid) ? "folder" : "file") as "folder" | "file",
+            }))
+            setDragItem(e, { ...item, bulk })
+          } else {
+            setDragItem(e, item)
+          }
+        }}
         className={cn(
           "group border-b transition-colors hover:bg-accent/50",
           isSelected && "bg-accent",

@@ -96,8 +96,8 @@ export function FileList() {
     setIsOsDrag(false)
     const item = getDragItem(e)
     if (item) {
-      if (item.type === "file") await moveFile(item.id, activeFolderId)
-      else await moveFolder(item.id, activeFolderId)
+      const items = item.bulk ?? [item]
+      await Promise.all(items.map(i => i.type === "file" ? moveFile(i.id, activeFolderId) : moveFolder(i.id, activeFolderId)))
       return
     }
     await handleDroppedFiles(e.dataTransfer, (file) => uploadFile(file, activeFolderId))

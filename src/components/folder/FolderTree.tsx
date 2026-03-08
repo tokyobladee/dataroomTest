@@ -30,8 +30,8 @@ export function FolderTree() {
     e.preventDefault()
     const item = getDragItem(e)
     if (item) {
-      if (item.type === "file") await moveFile(item.id, null)
-      else await moveFolder(item.id, null)
+      const items = item.bulk ?? [item]
+      await Promise.all(items.map(i => i.type === "file" ? moveFile(i.id, null) : moveFolder(i.id, null)))
       return
     }
     await handleDroppedFiles(e.dataTransfer, (file) => uploadFile(file, null))
@@ -64,8 +64,8 @@ export function FolderTree() {
     setIsDragOverAllFiles(false)
     const item = getDragItem(e)
     if (item) {
-      if (item.type === "file") await moveFile(item.id, null)
-      else await moveFolder(item.id, null)
+      const items = item.bulk ?? [item]
+      await Promise.all(items.map(i => i.type === "file" ? moveFile(i.id, null) : moveFolder(i.id, null)))
       return
     }
     await handleDroppedFiles(e.dataTransfer, (file) => uploadFile(file, null))

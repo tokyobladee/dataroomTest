@@ -68,8 +68,10 @@ export function FileTreeItem({ file, depth }: Props) {
     setIsDragOver(false)
     const item = getDragItem(e)
     if (item) {
-      if (item.type === "file") await moveFile(item.id, targetFolderId)
-      else await moveFolder(item.id, targetFolderId)
+      const items = item.bulk ?? [item]
+      await Promise.all(items.map(i =>
+        i.type === "file" ? moveFile(i.id, targetFolderId) : moveFolder(i.id, targetFolderId)
+      ))
       return
     }
     await handleDroppedFiles(e.dataTransfer, (f) => uploadFile(f, targetFolderId))

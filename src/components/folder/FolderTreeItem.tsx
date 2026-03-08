@@ -101,8 +101,10 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
     setIsDragOver(false)
     const item = getDragItem(e)
     if (item) {
-      if (item.type === "file") await moveFile(item.id, folder.id)
-      else if (item.id !== folder.id) await moveFolder(item.id, folder.id)
+      const items = item.bulk ?? [item]
+      await Promise.all(items.map(i =>
+        i.type === "file" ? moveFile(i.id, folder.id) : (i.id !== folder.id ? moveFolder(i.id, folder.id) : Promise.resolve())
+      ))
       return
     }
     await handleDroppedFiles(e.dataTransfer, (file) => uploadFile(file, folder.id))

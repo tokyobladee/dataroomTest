@@ -62,7 +62,20 @@ export function FileItem({ file }: Props) {
       <tr
         data-item-id={file.id}
         draggable
-        onDragStart={(e) => { e.stopPropagation(); setDragItem(e, { id: file.id, type: "file" }) }}
+        onDragStart={(e) => {
+          e.stopPropagation()
+          const { selectedIds, folders } = useDataroomStore.getState()
+          const item = { id: file.id, type: "file" as const }
+          if (selectedIds.includes(file.id) && selectedIds.length > 1) {
+            const bulk = selectedIds.map(sid => ({
+              id: sid,
+              type: (folders.some(f => f.id === sid) ? "folder" : "file") as "folder" | "file",
+            }))
+            setDragItem(e, { ...item, bulk })
+          } else {
+            setDragItem(e, item)
+          }
+        }}
         className={cn(
           "group border-b cursor-pointer transition-colors hover:bg-accent/50",
           isSelected && "bg-accent",

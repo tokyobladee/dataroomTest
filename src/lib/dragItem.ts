@@ -3,6 +3,7 @@ export const DRAG_ITEM_TYPE = "text/x-dataroom-item"
 export interface DraggedItem {
   id: string
   type: "file" | "folder"
+  bulk?: { id: string; type: "file" | "folder" }[]
 }
 
 export function setDragItem(e: React.DragEvent, item: DraggedItem) {
