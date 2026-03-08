@@ -56,7 +56,9 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
     renameFolder,
     deleteFolder,
     uploadFile,
+    myRole,
   } = useDataroomStore()
+  const isOwner = myRole === "owner"
   const navigateFolder = useNavigateFolder()
 
   const [createOpen, setCreateOpen] = useState(false)
@@ -160,11 +162,15 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" onClick={(e) => e.stopPropagation()}>
-            <DropdownMenuItem onClick={() => setShareOpen(true)}>
-              <Link2 className="h-4 w-4 mr-2" />
-              Share
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
+            {isOwner && (
+              <>
+                <DropdownMenuItem onClick={() => setShareOpen(true)}>
+                  <Link2 className="h-4 w-4 mr-2" />
+                  Share
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+              </>
+            )}
             <DropdownMenuItem onClick={() => setCreateOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
               New subfolder

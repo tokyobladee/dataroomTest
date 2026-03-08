@@ -85,7 +85,7 @@ export function ShareFolderDialog({ open, onClose, folderId, folderName }: Props
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent className="sm:max-w-sm overflow-hidden">
         <DialogHeader>
           <DialogTitle>Share &ldquo;{folderName}&rdquo;</DialogTitle>
         </DialogHeader>
@@ -128,9 +128,9 @@ export function ShareFolderDialog({ open, onClose, folderId, folderName }: Props
             </Button>
           </div>
         ) : (
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 overflow-hidden w-full">
             <p className="text-sm text-muted-foreground">Link created. Share it with anyone.</p>
-            <div className="flex items-center gap-2 rounded-md border bg-muted/50 px-3 py-2">
+            <div className="flex items-center gap-2 rounded-md border bg-muted/50 px-3 py-2 overflow-hidden w-full">
               <p className="text-xs font-mono flex-1 min-w-0 truncate">{createdUrl}</p>
               <Button
                 variant="ghost"

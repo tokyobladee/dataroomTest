@@ -30,6 +30,7 @@ function mapFile(r: Record<string, unknown>): DataroomFile {
 
 interface DataroomState {
   dataroomId: string | null
+  myRole: string | null
   folders: Folder[]
   files: DataroomFile[]
   activeFolderId: string | null
@@ -64,6 +65,7 @@ interface DataroomState {
 
 export const useDataroomStore = create<DataroomState>((set, get) => ({
   dataroomId: null,
+  myRole: null,
   folders: [],
   files: [],
   activeFolderId: null,
@@ -87,12 +89,17 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
         rooms = [created]
       }
       const dataroomId = rooms[0].id as string
-      const [rawFolders, rawFiles] = await Promise.all([
+      const [rawFolders, rawFiles, rawMembers] = await Promise.all([
         apiJSON<Record<string, unknown>[]>(`/api/datarooms/${dataroomId}/folders`),
         apiJSON<Record<string, unknown>[]>(`/api/datarooms/${dataroomId}/files`),
+        apiJSON<Record<string, unknown>[]>(`/api/datarooms/${dataroomId}/members`),
       ])
+      const { auth } = await import("@/lib/firebase")
+      const myUid = auth.currentUser?.uid ?? null
+      const me = rawMembers.find((m) => m.user_uid === myUid)
       set({
         dataroomId,
+        myRole: (me?.role as string) ?? null,
         folders: rawFolders.map(mapFolder),
         files: rawFiles.map(mapFile),
         isLoading: false,

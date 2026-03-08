@@ -41,6 +41,7 @@ export function DriveImportDialog({ open, onClose }: Props) {
   const [loadingMore, setLoadingMore] = useState(false)
   const [query, setQuery] = useState("")
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [importProgress, setImportProgress] = useState<{ current: number; total: number; name: string } | null>(null)
   // Reset state when dialog opens
   useEffect(() => {
     if (open) {
@@ -142,16 +143,25 @@ export function DriveImportDialog({ open, onClose }: Props) {
   async function handleImport() {
     if (selectedIds.size === 0) return
     setStatus("importing")
-    try {
-      await importFromDrive(Array.from(selectedIds))
-      toast.success(
-        `${selectedIds.size} file${selectedIds.size > 1 ? "s" : ""} imported from Google Drive`
-      )
-      onClose()
-    } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "Import failed")
-      setStatus("ready")
+    const ids = Array.from(selectedIds)
+    const total = ids.length
+    let failed = 0
+    for (let i = 0; i < ids.length; i++) {
+      const file = files.find((f) => f.id === ids[i])
+      setImportProgress({ current: i + 1, total, name: file?.name ?? ids[i] })
+      try {
+        await importFromDrive([ids[i]])
+      } catch {
+        failed++
+      }
     }
+    setImportProgress(null)
+    if (failed === 0) {
+      toast.success(`${total} file${total > 1 ? "s" : ""} imported from Google Drive`)
+    } else {
+      toast.error(`${failed} of ${total} files failed to import`)
+    }
+    onClose()
   }
 
   const filtered = query.trim()
@@ -264,12 +274,21 @@ export function DriveImportDialog({ open, onClose }: Props) {
           )}
 
           {/* Importing */}
-          {isImporting && (
-            <div className="flex flex-1 items-center justify-center gap-3 py-12">
+          {isImporting && importProgress && (
+            <div className="flex flex-1 flex-col items-center justify-center gap-3 py-12">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">
-                Importing {selectedIds.size} file{selectedIds.size > 1 ? "s" : ""}…
-              </span>
+              <p className="text-sm text-muted-foreground">
+                {importProgress.current} of {importProgress.total}
+              </p>
+              <p className="text-xs text-muted-foreground max-w-xs truncate text-center">
+                {importProgress.name}
+              </p>
+              <div className="w-48 h-1.5 rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full bg-foreground rounded-full transition-all duration-300"
+                  style={{ width: `${(importProgress.current / importProgress.total) * 100}%` }}
+                />
+              </div>
             </div>
           )}
         </div>

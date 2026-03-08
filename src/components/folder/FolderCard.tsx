@@ -33,8 +33,9 @@ interface Props {
 }
 
 export function FolderCard({ folder }: Props) {
-  const { createFolder, renameFolder, deleteFolder, moveFolder, moveFile, selectedIds, toggleSelected, uploadFile } =
+  const { createFolder, renameFolder, deleteFolder, moveFolder, moveFile, selectedIds, toggleSelected, uploadFile, myRole } =
     useDataroomStore()
+  const isOwner = myRole === "owner"
   const navigateFolder = useNavigateFolder()
   const [createOpen, setCreateOpen] = useState(false)
   const [renameOpen, setRenameOpen] = useState(false)
@@ -135,11 +136,15 @@ export function FolderCard({ folder }: Props) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-              <DropdownMenuItem onClick={() => setShareOpen(true)}>
-                <Link2 className="h-4 w-4 mr-2" />
-                Share
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
+              {isOwner && (
+                <>
+                  <DropdownMenuItem onClick={() => setShareOpen(true)}>
+                    <Link2 className="h-4 w-4 mr-2" />
+                    Share
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
               <DropdownMenuItem onClick={() => setCreateOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 New subfolder

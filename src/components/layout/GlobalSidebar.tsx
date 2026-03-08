@@ -21,7 +21,8 @@ import { MembersDialog } from "@/components/members/MembersDialog"
 import { ShareLinksDialog } from "@/components/share/ShareLinksDialog"
 
 export function GlobalSidebar() {
-  const { uploadFile, moveFile, moveFolder } = useDataroomStore()
+  const { uploadFile, moveFile, moveFolder, myRole } = useDataroomStore()
+  const isOwner = myRole === "owner"
   const { user, logout } = useAuthStore()
   const dragCounter = useRef(0)
   const [isDragOver, setIsDragOver] = useState(false)
@@ -103,15 +104,19 @@ export function GlobalSidebar() {
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-52">
-                <DropdownMenuItem onClick={() => setMembersOpen(true)}>
-                  <Users className="h-4 w-4 mr-2" />
-                  Members
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setShareOpen(true)}>
-                  <Link2 className="h-4 w-4 mr-2" />
-                  Share links
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
+                {isOwner && (
+                  <>
+                    <DropdownMenuItem onClick={() => setMembersOpen(true)}>
+                      <Users className="h-4 w-4 mr-2" />
+                      Members
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setShareOpen(true)}>
+                      <Link2 className="h-4 w-4 mr-2" />
+                      Share links
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
                 <DropdownMenuItem onClick={() => logout()} className="text-destructive focus:text-destructive">
                   <LogOut className="h-4 w-4 mr-2" />
                   Sign out
