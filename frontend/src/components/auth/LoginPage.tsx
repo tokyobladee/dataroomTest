@@ -89,9 +89,10 @@ export function LoginPage() {
     try {
       await signInWithGoogle()
     } catch (err) {
-      const code = (err as { code?: string }).code ?? ""
+      const e = err as { code?: string; message?: string }
+      const code = e.code ?? ""
       const msg = getAuthErrorMessage(code)
-      if (msg) setError(msg)
+      setError(msg || `Error: ${e.message ?? String(err)}`)
     } finally {
       setIsGoogleLoading(false)
     }
