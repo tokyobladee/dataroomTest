@@ -12,7 +12,7 @@ function getAuthErrorMessage(code: string): string {
   if (code.includes("too-many-requests")) return "Too many attempts. Try again later."
   if (code.includes("popup-closed-by-user") || code.includes("cancelled-popup-request")) return ""
   if (code.includes("popup-blocked")) return "Popups are blocked. Please allow popups for this site and try again."
-  return "Sign in failed. Try again."
+  return `Sign in failed (${code || "no-code"}). Try again.`
 }
 
 export function LoginPage() {
