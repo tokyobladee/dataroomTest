@@ -20,13 +20,7 @@ export function UploadFab() {
   async function handleFiles(fileList: FileList | null) {
     if (!fileList || fileList.length === 0) return
 
-    const files = Array.from(fileList).filter((f) => f.type === "application/pdf")
-    const rejected = fileList.length - files.length
-
-    if (rejected > 0) {
-      toast.error(`${rejected} file${rejected > 1 ? "s" : ""} skipped — only PDF files are supported`)
-    }
-
+    const files = Array.from(fileList)
     if (files.length === 0) return
 
     setUploading(true)
@@ -76,14 +70,14 @@ export function UploadFab() {
               }
             </button>
           </TooltipTrigger>
-          <TooltipContent side="left">Upload PDF files</TooltipContent>
+          <TooltipContent side="left">Upload files</TooltipContent>
         </Tooltip>
       </div>
 
       <input
         ref={inputRef}
         type="file"
-        accept="application/pdf"
+        accept="*"
         multiple
         className="hidden"
         onChange={(e) => handleFiles(e.target.files)}

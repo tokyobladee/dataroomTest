@@ -195,7 +195,7 @@ export function FileList() {
 
           <div
             ref={tableContainerRef}
-            className="relative flex flex-col flex-1 min-h-0 overflow-auto"
+            className="relative flex flex-col flex-1 min-h-0 overflow-auto scrollbar-thin"
             onMouseDown={onRubberBandMouseDown}
           >
             {displayRect && displayRect.width > 4 && displayRect.height > 4 && (
@@ -209,7 +209,7 @@ export function FileList() {
                 <div className="rounded-full bg-primary/10 p-4">
                   <Upload className="h-8 w-8 text-primary" />
                 </div>
-                <p className="text-sm font-semibold text-primary">Drop PDF files here</p>
+                <p className="text-sm font-semibold text-primary">Drop files here</p>
                 <p className="text-xs text-primary/70">
                   Into &ldquo;{activeFolder ? activeFolder.name : "All files"}&rdquo;
                 </p>
@@ -223,7 +223,7 @@ export function FileList() {
                 </div>
                 <p className="text-sm font-medium">No files here</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  {canEdit ? "Drag PDF files here or click the + button to upload" : "This folder is empty"}
+                  {canEdit ? "Drag files here or click the + button to upload" : "This folder is empty"}
                 </p>
                 {canEdit && (
                   <>
@@ -246,11 +246,11 @@ export function FileList() {
                     <input
                       ref={uploadInputRef}
                       type="file"
-                      accept="application/pdf"
+                      accept="*"
                       multiple
                       className="hidden"
                       onChange={async (e) => {
-                        const files = Array.from(e.target.files ?? []).filter((f) => f.type === "application/pdf")
+                        const files = Array.from(e.target.files ?? [])
                         if (files.length === 0) return
                         try {
                           await uploadFiles(files, activeFolderId)

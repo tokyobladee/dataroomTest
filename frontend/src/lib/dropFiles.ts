@@ -4,13 +4,7 @@ export async function handleDroppedFiles(
   dataTransfer: DataTransfer,
   upload: (file: File) => Promise<void>
 ): Promise<void> {
-  const files = Array.from(dataTransfer.files).filter((f) => f.type === "application/pdf")
-  const rejected = dataTransfer.files.length - files.length
-
-  if (rejected > 0) {
-    toast.error(`${rejected} file${rejected > 1 ? "s" : ""} skipped — only PDF files are supported`)
-  }
-
+  const files = Array.from(dataTransfer.files)
   if (files.length === 0) return
 
   try {
@@ -22,14 +16,7 @@ export async function handleDroppedFiles(
 }
 
 export function collectDroppedFiles(dataTransfer: DataTransfer): File[] {
-  const files = Array.from(dataTransfer.files).filter((f) => f.type === "application/pdf")
-  const rejected = dataTransfer.files.length - files.length
-
-  if (rejected > 0) {
-    toast.error(`${rejected} file${rejected > 1 ? "s" : ""} skipped — only PDF files are supported`)
-  }
-
-  return files
+  return Array.from(dataTransfer.files)
 }
 
 export function isFileDrag(e: React.DragEvent): boolean {

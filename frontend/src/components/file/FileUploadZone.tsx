@@ -17,13 +17,7 @@ export function FileUploadZone({ folderId }: Props) {
   async function handleFiles(fileList: FileList | null) {
     if (!fileList || fileList.length === 0) return
 
-    const files = Array.from(fileList).filter((f) => f.type === "application/pdf")
-    const rejected = fileList.length - files.length
-
-    if (rejected > 0) {
-      toast.error(`${rejected} file${rejected > 1 ? "s" : ""} skipped — only PDF files are supported`)
-    }
-
+    const files = Array.from(fileList)
     if (files.length === 0) return
 
     setUploading(true)
@@ -75,7 +69,7 @@ export function FileUploadZone({ folderId }: Props) {
       </div>
       <div>
         <p className="text-sm font-medium">
-          {uploading ? "Uploading…" : "Drop PDF files here"}
+          {uploading ? "Uploading…" : "Drop files here"}
         </p>
         {!uploading && (
           <p className="text-xs text-muted-foreground mt-1">or click to browse</p>
@@ -84,7 +78,7 @@ export function FileUploadZone({ folderId }: Props) {
       <input
         ref={inputRef}
         type="file"
-        accept="application/pdf"
+        accept="*"
         multiple
         className="hidden"
         onChange={(e) => handleFiles(e.target.files)}
