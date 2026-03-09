@@ -16,10 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { toast } from "sonner"
-
-interface ShareLink {
-  token: string
-}
+import type { ShareLink } from "@/stores/dataroomStore"
 
 const FRONTEND = import.meta.env.VITE_FRONTEND_URL ?? window.location.origin
 
@@ -33,12 +30,13 @@ const EXPIRY_OPTIONS = [
 interface Props {
   open: boolean
   onClose: () => void
-  folderId: string
-  folderName: string
+  folderId?: string
+  fileId?: string
+  itemName: string
 }
 
-export function ShareFolderDialog({ open, onClose, folderId, folderName }: Props) {
-  const { dataroomId } = useDataroomStore()
+export function ShareFolderDialog({ open, onClose, folderId, fileId, itemName }: Props) {
+  const { dataroomId, addShareLink } = useDataroomStore()
   const [permissions, setPermissions] = useState<"viewer" | "editor">("viewer")
   const [expiry, setExpiry] = useState(EXPIRY_OPTIONS[0])
   const [creating, setCreating] = useState(false)
@@ -65,8 +63,9 @@ export function ShareFolderDialog({ open, onClose, folderId, folderName }: Props
       }
       const link = await apiJSON<ShareLink>(`/api/datarooms/${dataroomId}/share-links`, {
         method: "POST",
-        body: JSON.stringify({ folderId, permissions, expiresAt }),
+        body: JSON.stringify({ folderId, fileId, permissions, expiresAt }),
       })
+      addShareLink(link)
       const url = `${FRONTEND}/s/${link.token}`
       setCreatedUrl(url)
     } catch (e: unknown) {
@@ -87,7 +86,7 @@ export function ShareFolderDialog({ open, onClose, folderId, folderName }: Props
     <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
       <DialogContent className="sm:max-w-sm overflow-hidden">
         <DialogHeader>
-          <DialogTitle>Share &ldquo;{folderName}&rdquo;</DialogTitle>
+          <DialogTitle>Share &ldquo;{itemName}&rdquo;</DialogTitle>
         </DialogHeader>
 
         {!createdUrl ? (

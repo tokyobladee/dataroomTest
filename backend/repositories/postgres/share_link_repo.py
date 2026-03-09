@@ -9,6 +9,7 @@ def _to_dto(row: ShareLink) -> ShareLinkDTO:
         token=row.token,
         dataroom_id=row.dataroom_id,
         folder_id=row.folder_id,
+        file_id=row.file_id,
         permissions=row.permissions,
         created_by_uid=row.created_by_uid,
         expires_at=row.expires_at,
@@ -28,12 +29,13 @@ class PostgresShareLinkRepository(ShareLinkRepository):
         rows = self._db.query(ShareLink).filter_by(dataroom_id=dataroom_id).all()
         return [_to_dto(r) for r in rows]
 
-    def create(self, dataroom_id: str, folder_id: str | None,
+    def create(self, dataroom_id: str, folder_id: str | None, file_id: str | None,
                permissions: str, created_by_uid: str,
                expires_at: datetime | None) -> ShareLinkDTO:
         row = ShareLink(
             dataroom_id=dataroom_id,
             folder_id=folder_id,
+            file_id=file_id,
             permissions=permissions,
             created_by_uid=created_by_uid,
             expires_at=expires_at,

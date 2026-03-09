@@ -1,5 +1,5 @@
 import { useRef, useState } from "react"
-import { Folder, MoreHorizontal, Plus, Pencil, Trash2, Check, ChevronRight, Link2, Download } from "lucide-react"
+import { Folder, MoreHorizontal, Plus, Pencil, Trash2, Check, ChevronRight, Link2, Download, Share2 } from "lucide-react"
 import type { Folder as FolderType } from "@/types"
 import { useDataroomStore } from "@/stores/dataroomStore"
 import { useNavigateFolder } from "@/lib/useNavigateFolder"
@@ -33,9 +33,10 @@ interface Props {
 }
 
 export function FolderCard({ folder }: Props) {
-  const { createFolder, renameFolder, deleteFolder, moveFolder, moveFiles, selectedIds, toggleSelected, clearSelection, uploadFiles, myRole, downloadFolderAsZip } =
+  const { createFolder, renameFolder, deleteFolder, moveFolder, moveFiles, selectedIds, toggleSelected, clearSelection, uploadFiles, myRole, downloadFolderAsZip, shareLinks } =
     useDataroomStore()
   const isOwner = myRole === "owner"
+  const isShared = shareLinks.some(l => l.folder_id === folder.id)
   const navigateFolder = useNavigateFolder()
   const [createOpen, setCreateOpen] = useState(false)
   const [renameOpen, setRenameOpen] = useState(false)
@@ -138,6 +139,7 @@ export function FolderCard({ folder }: Props) {
           <div className="flex items-center gap-2 min-w-0">
             <Folder className="h-4 w-4 shrink-0 text-muted-foreground" />
             <span className="font-medium truncate">{folder.name}</span>
+            {isShared && <Share2 className="h-3 w-3 text-muted-foreground shrink-0" />}
             <ChevronRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
         </td>
@@ -193,7 +195,7 @@ export function FolderCard({ folder }: Props) {
         open={shareOpen}
         onClose={() => setShareOpen(false)}
         folderId={folder.id}
-        folderName={folder.name}
+        itemName={folder.name}
       />
 
       <FolderDialog

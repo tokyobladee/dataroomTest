@@ -14,6 +14,7 @@ class ShareLink(Base):
     token: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     dataroom_id: Mapped[str] = mapped_column(String, ForeignKey("datarooms.id", ondelete="CASCADE"), nullable=False, index=True)
     folder_id: Mapped[str | None] = mapped_column(String, ForeignKey("folders.id", ondelete="SET NULL"), nullable=True)
+    file_id: Mapped[str | None] = mapped_column(String, ForeignKey("files.id", ondelete="SET NULL"), nullable=True)
     permissions: Mapped[str] = mapped_column(String, nullable=False, default="viewer")
     created_by_uid: Mapped[str] = mapped_column(String, nullable=False)
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

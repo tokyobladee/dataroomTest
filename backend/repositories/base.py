@@ -57,6 +57,7 @@ class ShareLinkDTO:
     token: str
     dataroom_id: str
     folder_id: str | None
+    file_id: str | None
     permissions: str
     created_by_uid: str
     expires_at: datetime | None
@@ -156,7 +157,7 @@ class ShareLinkRepository(ABC):
     def list_by_dataroom(self, dataroom_id: str) -> list[ShareLinkDTO]: ...
 
     @abstractmethod
-    def create(self, dataroom_id: str, folder_id: str | None,
+    def create(self, dataroom_id: str, folder_id: str | None, file_id: str | None,
                permissions: str, created_by_uid: str,
                expires_at: datetime | None) -> ShareLinkDTO: ...
 

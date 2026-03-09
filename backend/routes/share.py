@@ -27,13 +27,14 @@ def create_link(dataroom_id: str):
     from container import get_share_service
     data = request.get_json(force=True)
     folder_id = data.get("folderId") or None
+    file_id = data.get("fileId") or None
     permissions = data.get("permissions", "viewer")
     expires_at = None
     if data.get("expiresAt"):
         expires_at = datetime.fromisoformat(data["expiresAt"]).replace(tzinfo=timezone.utc)
     svc = get_share_service()
     try:
-        link = svc.create(dataroom_id, folder_id, permissions, g.user_uid, expires_at)
+        link = svc.create(dataroom_id, folder_id, permissions, g.user_uid, expires_at, file_id)
     except PermissionError as e:
         return jsonify({"error": str(e)}), 403
     except ValueError as e:

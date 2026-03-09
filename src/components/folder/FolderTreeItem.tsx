@@ -223,7 +223,7 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
         open={shareOpen}
         onClose={() => setShareOpen(false)}
         folderId={folder.id}
-        folderName={folder.name}
+        itemName={folder.name}
       />
 
       <FolderDialog

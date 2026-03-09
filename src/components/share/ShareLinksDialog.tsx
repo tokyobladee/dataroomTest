@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Link2, Copy, Trash2, Plus, ChevronDown, Check } from "lucide-react"
+import { Link2, Copy, Trash2, Plus, ChevronDown, Check, FileText, Folder as FolderIcon } from "lucide-react"
 import { useDataroomStore } from "@/stores/dataroomStore"
 import { apiJSON, apiFetch } from "@/lib/api"
 import { Button } from "@/components/ui/button"
@@ -17,11 +17,13 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import type { Folder as FolderType } from "@/types"
 
 interface ShareLink {
   token: string
   dataroom_id: string
   folder_id: string | null
+  file_id: string | null
   permissions: string
   created_by_uid: string
   expires_at: string | null
@@ -46,13 +48,23 @@ const EXPIRY_OPTIONS = [
   { label: "30 days", days: 30 },
 ]
 
+function resolvePath(folderId: string, folders: FolderType[]): string {
+  const parts: string[] = []
+  let current = folders.find(f => f.id === folderId)
+  while (current) {
+    parts.unshift(current.name)
+    current = current.parentId ? folders.find(f => f.id === current!.parentId) : undefined
+  }
+  return parts.join(" / ") || "Unknown folder"
+}
+
 interface Props {
   open: boolean
   onClose: () => void
 }
 
 export function ShareLinksDialog({ open, onClose }: Props) {
-  const { dataroomId } = useDataroomStore()
+  const { dataroomId, folders, files, addShareLink, removeShareLink } = useDataroomStore()
   const [links, setLinks] = useState<ShareLink[]>([])
   const [loading, setLoading] = useState(false)
   const [creating, setCreating] = useState(false)
@@ -84,6 +96,7 @@ export function ShareLinksDialog({ open, onClose }: Props) {
         body: JSON.stringify({ permissions: newPermissions, expiresAt }),
       })
       setLinks((prev) => [link, ...prev])
+      addShareLink(link)
       toast.success("Share link created")
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "Failed to create link")
@@ -96,6 +109,7 @@ export function ShareLinksDialog({ open, onClose }: Props) {
     try {
       await apiFetch(`/api/share-links/${token}`, { method: "DELETE" })
       setLinks((prev) => prev.filter((l) => l.token !== token))
+      removeShareLink(token)
       toast.success("Link revoked")
     } catch {
       toast.error("Failed to revoke link")
@@ -106,6 +120,31 @@ export function ShareLinksDialog({ open, onClose }: Props) {
     navigator.clipboard.writeText(linkUrl(token))
     setCopiedToken(token)
     setTimeout(() => setCopiedToken(null), 2000)
+  }
+
+  function resolveTarget(link: ShareLink) {
+    if (link.file_id) {
+      const file = files.find(f => f.id === link.file_id)
+      return (
+        <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+          <FileText className="h-3 w-3 shrink-0" />
+          {file?.name ?? "Unknown file"}
+        </p>
+      )
+    }
+    if (link.folder_id) {
+      return (
+        <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+          <FolderIcon className="h-3 w-3 shrink-0" />
+          {resolvePath(link.folder_id, folders)}
+        </p>
+      )
+    }
+    return (
+      <p className="text-xs text-muted-foreground mt-0.5">
+        Entire dataroom
+      </p>
+    )
   }
 
   return (
@@ -168,9 +207,7 @@ export function ShareLinksDialog({ open, onClose }: Props) {
               >
                 <Link2 className="h-4 w-4 text-muted-foreground shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-mono text-muted-foreground truncate">
-                    {linkUrl(link.token)}
-                  </p>
+                  {resolveTarget(link)}
                   <p className="text-xs text-muted-foreground mt-0.5">
                     <span className={cn(
                       "inline-flex items-center rounded px-1 py-0.5 text-[10px] font-medium mr-1",
@@ -181,6 +218,9 @@ export function ShareLinksDialog({ open, onClose }: Props) {
                       {link.permissions}
                     </span>
                     Expires: {formatExpiry(link.expires_at)}
+                  </p>
+                  <p className="text-xs font-mono text-muted-foreground truncate mt-0.5">
+                    {linkUrl(link.token)}
                   </p>
                 </div>
                 <Button

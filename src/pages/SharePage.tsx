@@ -9,6 +9,7 @@ interface ShareInfo {
   token: string
   dataroom_id: string
   folder_id: string | null
+  file_id: string | null
   permissions: string
   expires_at: string | null
 }
@@ -68,6 +69,13 @@ export function SharePage() {
         setInfo(shareInfo)
         setFolders(allFolders)
         setFiles(allFiles)
+        if (shareInfo.folder_id) {
+          setActiveFolderId(shareInfo.folder_id)
+          setBreadcrumb([])
+        }
+        if (shareInfo.file_id) {
+          setActiveFolderId(null)
+        }
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false))
@@ -90,10 +98,65 @@ export function SharePage() {
     window.open(`${BASE}/api/s/${token}/files/${file.id}`, "_blank")
   }
 
+  const isEditor = info?.permissions === "editor"
+
+  // File share: show single file download view
+  if (!loading && !error && info?.file_id) {
+    const sharedFile = files[0] ?? null
+    return (
+      <div className="min-h-screen bg-muted/30">
+        <header className="bg-background border-b">
+          <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-muted-foreground" />
+              <span className="font-semibold text-sm">Shared file</span>
+            </div>
+            <div className="flex items-center gap-3">
+              {info?.expires_at && (
+                <span className="text-xs text-muted-foreground hidden sm:block">
+                  Expires {formatExpiry(info.expires_at)}
+                </span>
+              )}
+              {info && (
+                <span className={cn(
+                  "flex items-center gap-1 text-xs px-2 py-1 rounded-md font-medium",
+                  isEditor
+                    ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
+                    : "bg-muted text-muted-foreground"
+                )}>
+                  {isEditor ? <Pencil className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                  {info.permissions}
+                </span>
+              )}
+            </div>
+          </div>
+        </header>
+        <main className="max-w-2xl mx-auto px-4 py-6">
+          {sharedFile ? (
+            <div className="bg-background rounded-lg border overflow-hidden">
+              <div className="flex items-center gap-3 px-4 py-4">
+                <FileText className="h-8 w-8 text-muted-foreground shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium truncate">{sharedFile.name}</p>
+                  <p className="text-sm text-muted-foreground mt-0.5">{formatSize(sharedFile.size)}</p>
+                </div>
+                <Button onClick={() => handleDownload(sharedFile)} className="gap-2 shrink-0">
+                  <Download className="h-4 w-4" />
+                  Download
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-12">File not found</p>
+          )}
+        </main>
+      </div>
+    )
+  }
+
   const visibleFolders = folders.filter((f) => f.parent_id === activeFolderId)
   const visibleFiles = files.filter((f) => f.folder_id === activeFolderId)
   const totalVisible = visibleFolders.length + visibleFiles.length
-  const isEditor = info?.permissions === "editor"
 
   if (loading) {
     return (
@@ -148,10 +211,17 @@ export function SharePage() {
         <nav className="flex items-center gap-1 text-sm flex-wrap">
           <button
             className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
-            onClick={() => navigateToFolder(null)}
+            onClick={() => {
+              if (info?.folder_id) {
+                setActiveFolderId(info.folder_id)
+                setBreadcrumb([])
+              } else {
+                navigateToFolder(null)
+              }
+            }}
           >
             <Home className="h-3.5 w-3.5" />
-            <span>All files</span>
+            <span>{info?.folder_id ? (folders.find(f => f.id === info.folder_id)?.name ?? "Home") : "All files"}</span>
           </button>
           {breadcrumb.map((f) => (
             <span key={f.id} className="flex items-center gap-1">

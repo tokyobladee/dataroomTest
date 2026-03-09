@@ -4,6 +4,14 @@ import type { DataroomFile, Folder } from "@/types"
 import { detectFileConflicts, generateCopyName } from "@/lib/fileConflicts"
 import type { FileConflict, ConflictResolution } from "@/lib/fileConflicts"
 
+export interface ShareLink {
+  token: string
+  folder_id: string | null
+  file_id: string | null
+  permissions: string
+  expires_at: string | null
+}
+
 // ---------- helpers: map snake_case API response → camelCase ----------
 
 function mapFolder(r: Record<string, unknown>): Folder {
@@ -42,6 +50,7 @@ interface DataroomState {
   previewFileId: string | null
   dragOverFolderId: string | null
   isLoading: boolean
+  shareLinks: ShareLink[]
   pendingFileConflicts: {
     conflicts: FileConflict[]
     resolve: (resolutions: Map<string, ConflictResolution>) => void
@@ -50,6 +59,8 @@ interface DataroomState {
 
   resetStore: () => void
   initDataroom: () => Promise<void>
+  addShareLink: (link: ShareLink) => void
+  removeShareLink: (token: string) => void
 
   setActiveFolder: (id: string | null) => void
   toggleFolderExpanded: (id: string) => void
@@ -94,6 +105,7 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
   previewFileId: null,
   dragOverFolderId: null,
   isLoading: false,
+  shareLinks: [],
   pendingFileConflicts: null,
 
   resetStore: () => set({
@@ -107,6 +119,7 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
     selectedIds: [],
     previewFileId: null,
     isLoading: true,
+    shareLinks: [],
     pendingFileConflicts: null,
   }),
 
@@ -133,12 +146,18 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
       const { auth } = await import("@/lib/firebase")
       const myUid = auth.currentUser?.uid ?? null
       const me = rawMembers.find((m) => m.user_uid === myUid)
+      const myRole = (me?.role as "owner" | "editor" | "viewer" | null) ?? null
+      let shareLinks: ShareLink[] = []
+      if (myRole === "owner") {
+        shareLinks = await apiJSON<ShareLink[]>(`/api/datarooms/${dataroomId}/share-links`)
+      }
       set({
         dataroomId,
         dataroomName: (rooms[0].name as string) ?? null,
-        myRole: (me?.role as "owner" | "editor" | "viewer" | null) ?? null,
+        myRole,
         folders: rawFolders.map(mapFolder),
         files: rawFiles.map(mapFile),
+        shareLinks,
         isLoading: false,
       })
     } catch (e) {
@@ -480,6 +499,10 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
     pendingFileConflicts.cancel()
     set({ pendingFileConflicts: null })
   },
+
+  addShareLink: (link) => set((s) => ({ shareLinks: [link, ...s.shareLinks] })),
+
+  removeShareLink: (token) => set((s) => ({ shareLinks: s.shareLinks.filter((l) => l.token !== token) })),
 }))
 
 // ---------- pure helpers ----------
