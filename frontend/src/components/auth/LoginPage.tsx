@@ -12,7 +12,7 @@ function getAuthErrorMessage(code: string): string {
   if (code.includes("too-many-requests")) return "Too many attempts. Try again later."
   if (code.includes("popup-closed-by-user") || code.includes("cancelled-popup-request")) return ""
   if (code.includes("popup-blocked")) return "Popups are blocked. Please allow popups for this site and try again."
-  return `Sign in failed (${code || "no-code"}). Try again.`
+  return "Sign in failed. Try again."
 }
 
 export function LoginPage() {
@@ -89,9 +89,9 @@ export function LoginPage() {
     try {
       await signInWithGoogle()
     } catch (err) {
-      const e = err as { code?: string; message?: string }
-      const code = e.code ?? ""
-      setError(`[${code || "no-code"}] ${e.message ?? String(err)}`)
+      const code = (err as { code?: string }).code ?? ""
+      const msg = getAuthErrorMessage(code)
+      if (msg) setError(msg)
     } finally {
       setIsGoogleLoading(false)
     }
