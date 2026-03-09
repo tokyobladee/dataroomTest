@@ -11,7 +11,6 @@ import { getDragItem, isInternalDrag } from "@/lib/dragItem"
 import { cn } from "@/lib/utils"
 import type { Folder } from "@/types"
 
-type TypeFilter = "all" | "folders" | "files"
 type SortKey = "name" | "size" | "date"
 type SortDir = "asc" | "desc"
 
@@ -22,7 +21,6 @@ export function FileList() {
   const [isDragOver, setIsDragOver] = useState(false)
   const [isOsDrag, setIsOsDrag] = useState(false)
   const [query, setQuery] = useState("")
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all")
   const [sortKey, setSortKey] = useState<SortKey>("name")
   const [sortDir, setSortDir] = useState<SortDir>("asc")
   const dragCounter = useRef(0)
@@ -37,8 +35,8 @@ export function FileList() {
   const rawSubfolders = folders.filter((f) => f.parentId === activeFolderId)
   const rawFiles = files.filter((f) => f.folderId === activeFolderId)
 
-  const subfolders = typeFilter === "files" ? [] : sortItems(rawSubfolders, sortKey, sortDir, "folder")
-  const visibleFiles = typeFilter === "folders" ? [] : sortItems(rawFiles, sortKey, sortDir, "file")
+  const subfolders = sortItems(rawSubfolders, sortKey, sortDir, "folder")
+  const visibleFiles = sortItems(rawFiles, sortKey, sortDir, "file")
 
   const breadcrumb = buildBreadcrumb(activeFolderId, folders)
 
@@ -178,33 +176,15 @@ export function FileList() {
                 </span>
               ))}
             </nav>
-            <div className="flex items-baseline justify-between gap-3">
-              <div className="flex items-baseline gap-2">
-                <h2 className="text-lg font-semibold">
-                  {activeFolder ? activeFolder.name : "Home"}
-                </h2>
-                <span className="text-sm text-muted-foreground">
-                  {rawSubfolders.length > 0 && `${rawSubfolders.length} folder${rawSubfolders.length > 1 ? "s" : ""}`}
-                  {rawSubfolders.length > 0 && rawFiles.length > 0 && " · "}
-                  {rawFiles.length > 0 && `${rawFiles.length} file${rawFiles.length > 1 ? "s" : ""}`}
-                </span>
-              </div>
-              <div className="flex items-center gap-1">
-                {(["all", "folders", "files"] as TypeFilter[]).map((f) => (
-                  <button
-                    key={f}
-                    onClick={() => setTypeFilter(f)}
-                    className={cn(
-                      "px-2.5 py-1 rounded-md text-xs font-medium transition-colors capitalize",
-                      typeFilter === f
-                        ? "bg-foreground text-background"
-                        : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                    )}
-                  >
-                    {f === "all" ? "All" : f === "folders" ? "Folders" : "Files"}
-                  </button>
-                ))}
-              </div>
+            <div className="flex items-baseline gap-2">
+              <h2 className="text-lg font-semibold">
+                {activeFolder ? activeFolder.name : "Home"}
+              </h2>
+              <span className="text-sm text-muted-foreground">
+                {rawSubfolders.length > 0 && `${rawSubfolders.length} folder${rawSubfolders.length > 1 ? "s" : ""}`}
+                {rawSubfolders.length > 0 && rawFiles.length > 0 && " · "}
+                {rawFiles.length > 0 && `${rawFiles.length} file${rawFiles.length > 1 ? "s" : ""}`}
+              </span>
             </div>
           </div>
 
