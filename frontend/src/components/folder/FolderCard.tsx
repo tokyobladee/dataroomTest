@@ -103,7 +103,7 @@ export function FolderCard({ folder }: Props) {
         draggable
         onDragStart={(e) => {
           e.stopPropagation()
-          const { selectedIds, folders, files } = useDataroomStore.getState()
+          const { selectedIds, folders } = useDataroomStore.getState()
           const item = { id: folder.id, type: "folder" as const }
           if (selectedIds.includes(folder.id) && selectedIds.length > 1) {
             const bulk = selectedIds.map(sid => ({
