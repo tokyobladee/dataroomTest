@@ -2,8 +2,7 @@ import { create } from "zustand"
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
-  signInWithRedirect,
-  getRedirectResult,
+  signInWithPopup,
   signOut,
   sendPasswordResetEmail,
   GoogleAuthProvider,
@@ -41,8 +40,6 @@ export const useAuthStore = create<AuthStore>((set) => {
     set({ user: fbUser ? mapUser(fbUser) : null, isLoading: false })
   })
 
-  getRedirectResult(auth).catch(() => {})
-
   return {
     user: null,
     isLoading: true,
@@ -53,7 +50,7 @@ export const useAuthStore = create<AuthStore>((set) => {
 
     signInWithGoogle: async () => {
       const provider = new GoogleAuthProvider()
-      await signInWithRedirect(auth, provider)
+      await signInWithPopup(auth, provider)
     },
 
     resetPassword: async (email) => {
