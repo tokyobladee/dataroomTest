@@ -91,8 +91,7 @@ export function LoginPage() {
     } catch (err) {
       const e = err as { code?: string; message?: string }
       const code = e.code ?? ""
-      const msg = getAuthErrorMessage(code)
-      setError(msg || `Error: ${e.message ?? String(err)}`)
+      setError(`[${code || "no-code"}] ${e.message ?? String(err)}`)
     } finally {
       setIsGoogleLoading(false)
     }
