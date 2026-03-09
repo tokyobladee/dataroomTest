@@ -7,13 +7,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
-
 # Editor directories and files
-docs
 .vscode/*
 !.vscode/extensions.json
 .idea
@@ -27,6 +21,14 @@ docs
 .env
 .env.local
 .env.*.local
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+
+# Docs (task specs, not for repo)
+docs/
 
 # Python
 backend/venv/

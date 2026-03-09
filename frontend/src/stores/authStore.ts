@@ -4,6 +4,7 @@ import {
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
+  sendPasswordResetEmail,
   GoogleAuthProvider,
   type User as FirebaseUser,
 } from "firebase/auth"
@@ -21,6 +22,7 @@ interface AuthStore {
   isLoading: boolean
   signInWithEmail: (email: string, password: string) => Promise<void>
   signInWithGoogle: () => Promise<void>
+  resetPassword: (email: string) => Promise<void>
   logout: () => Promise<void>
 }
 
@@ -49,6 +51,10 @@ export const useAuthStore = create<AuthStore>((set) => {
     signInWithGoogle: async () => {
       const provider = new GoogleAuthProvider()
       await signInWithPopup(auth, provider)
+    },
+
+    resetPassword: async (email) => {
+      await sendPasswordResetEmail(auth, email)
     },
 
     logout: async () => {
