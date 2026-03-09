@@ -7,8 +7,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { DriveImportDialog } from "@/components/drive/DriveImportDialog"
 
 export function UploadFab() {
-  const { uploadFiles, activeFolderId, files, folders } = useDataroomStore()
+  const { uploadFiles, activeFolderId, files, folders, myRole } = useDataroomStore()
 
+  const canUpload = myRole === "owner" || myRole === "editor"
   const isEmpty =
     files.filter((f) => f.folderId === activeFolderId).length === 0 &&
     folders.filter((f) => f.parentId === activeFolderId).length === 0
@@ -40,7 +41,7 @@ export function UploadFab() {
     }
   }
 
-  if (isEmpty) return null
+  if (isEmpty || !canUpload) return null
 
   return (
     <>

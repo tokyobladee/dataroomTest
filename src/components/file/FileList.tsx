@@ -17,7 +17,8 @@ type SortKey = "name" | "size" | "date"
 type SortDir = "asc" | "desc"
 
 export function FileList() {
-  const { files, folders, activeFolderId, uploadFiles, moveFiles, moveFolder, selectedIds, selectAll, clearSelection, setPreviewFile, isLoading } = useDataroomStore()
+  const { files, folders, activeFolderId, uploadFiles, moveFiles, moveFolder, selectedIds, selectAll, clearSelection, setPreviewFile, isLoading, myRole, dataroomOwnerEmail, dataroomName } = useDataroomStore()
+  const canEdit = myRole === "owner" || myRole === "editor"
   const { user } = useAuthStore()
   const navigateFolder = useNavigateFolder()
   const [isDragOver, setIsDragOver] = useState(false)
@@ -166,7 +167,7 @@ export function FileList() {
                 className="hover:text-foreground transition-colors"
                 onClick={() => navigateFolder(null)}
               >
-                {user?.email ?? "Home"}
+                {myRole === "owner" ? (user?.email ?? "Home") : (dataroomOwnerEmail ?? dataroomName ?? "Home")}
               </button>
               {breadcrumb.map((crumb) => (
                 <span key={crumb.id} className="flex items-center gap-1">
@@ -222,44 +223,48 @@ export function FileList() {
                 </div>
                 <p className="text-sm font-medium">No files here</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Drag PDF files here or click the + button to upload
+                  {canEdit ? "Drag PDF files here or click the + button to upload" : "This folder is empty"}
                 </p>
-                <div className="flex items-center gap-2 mt-4">
-                  <button
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-md border text-sm hover:bg-accent transition-colors"
-                    onClick={() => setDriveOpen(true)}
-                  >
-                    <HardDrive className="h-4 w-4" />
-                    Import from Drive
-                  </button>
-                  <button
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-foreground text-background text-sm hover:opacity-90 transition-opacity"
-                    onClick={() => uploadInputRef.current?.click()}
-                  >
-                    <Upload className="h-4 w-4" />
-                    Upload files
-                  </button>
-                </div>
-                <input
-                  ref={uploadInputRef}
-                  type="file"
-                  accept="application/pdf"
-                  multiple
-                  className="hidden"
-                  onChange={async (e) => {
-                    const files = Array.from(e.target.files ?? []).filter((f) => f.type === "application/pdf")
-                    if (files.length === 0) return
-                    try {
-                      await uploadFiles(files, activeFolderId)
-                      toast.success(`${files.length} file${files.length > 1 ? "s" : ""} uploaded`)
-                    } catch {
-                      toast.error("Failed to upload files")
-                    } finally {
-                      e.target.value = ""
-                    }
-                  }}
-                />
-                <DriveImportDialog open={driveOpen} onClose={() => setDriveOpen(false)} />
+                {canEdit && (
+                  <>
+                    <div className="flex items-center gap-2 mt-4">
+                      <button
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-md border text-sm hover:bg-accent transition-colors"
+                        onClick={() => setDriveOpen(true)}
+                      >
+                        <HardDrive className="h-4 w-4" />
+                        Import from Drive
+                      </button>
+                      <button
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-foreground text-background text-sm hover:opacity-90 transition-opacity"
+                        onClick={() => uploadInputRef.current?.click()}
+                      >
+                        <Upload className="h-4 w-4" />
+                        Upload files
+                      </button>
+                    </div>
+                    <input
+                      ref={uploadInputRef}
+                      type="file"
+                      accept="application/pdf"
+                      multiple
+                      className="hidden"
+                      onChange={async (e) => {
+                        const files = Array.from(e.target.files ?? []).filter((f) => f.type === "application/pdf")
+                        if (files.length === 0) return
+                        try {
+                          await uploadFiles(files, activeFolderId)
+                          toast.success(`${files.length} file${files.length > 1 ? "s" : ""} uploaded`)
+                        } catch {
+                          toast.error("Failed to upload files")
+                        } finally {
+                          e.target.value = ""
+                        }
+                      }}
+                    />
+                    <DriveImportDialog open={driveOpen} onClose={() => setDriveOpen(false)} />
+                  </>
+                )}
               </div>
             ) : (
               <table className="w-full text-sm border-collapse">

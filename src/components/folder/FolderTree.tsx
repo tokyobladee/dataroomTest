@@ -11,7 +11,8 @@ import { getDragItem, isInternalDrag } from "@/lib/dragItem"
 import { cn } from "@/lib/utils"
 
 export function FolderTree() {
-  const { folders, files, activeFolderId, createFolder, uploadFiles, moveFiles, moveFolder, clearSelection } = useDataroomStore()
+  const { folders, files, activeFolderId, createFolder, uploadFiles, moveFiles, moveFolder, clearSelection, myRole } = useDataroomStore()
+  const canEdit = myRole === "owner" || myRole === "editor"
   const navigateFolder = useNavigateFolder()
   const [createOpen, setCreateOpen] = useState(false)
   const [isDragOverAllFiles, setIsDragOverAllFiles] = useState(false)
@@ -104,15 +105,17 @@ export function FolderTree() {
         <span className="h-4 w-4 shrink-0 invisible" />
         <Home className="h-4 w-4 shrink-0 text-muted-foreground" />
         <span className="flex-1 truncate ml-1 min-w-0">Home</span>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-          onClick={(e) => { e.stopPropagation(); setCreateOpen(true) }}
-          title="New folder"
-        >
-          <Plus className="h-3.5 w-3.5" />
-        </Button>
+        {canEdit && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+            onClick={(e) => { e.stopPropagation(); setCreateOpen(true) }}
+            title="New folder"
+          >
+            <Plus className="h-3.5 w-3.5" />
+          </Button>
+        )}
       </div>
 
       {rootFolders.map((folder) => (

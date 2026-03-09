@@ -12,6 +12,13 @@ export interface ShareLink {
   expires_at: string | null
 }
 
+export interface SharedRoom {
+  id: string
+  name: string
+  ownerEmail: string | null
+  role: "editor" | "viewer"
+}
+
 // ---------- helpers: map snake_case API response → camelCase ----------
 
 function mapFolder(r: Record<string, unknown>): Folder {
@@ -41,6 +48,9 @@ function mapFile(r: Record<string, unknown>): DataroomFile {
 interface DataroomState {
   dataroomId: string | null
   dataroomName: string | null
+  myDataroomId: string | null
+  myDataroomName: string | null
+  dataroomOwnerEmail: string | null
   myRole: "owner" | "editor" | "viewer" | null
   folders: Folder[]
   files: DataroomFile[]
@@ -51,6 +61,7 @@ interface DataroomState {
   dragOverFolderId: string | null
   isLoading: boolean
   shareLinks: ShareLink[]
+  sharedRooms: SharedRoom[]
   pendingFileConflicts: {
     conflicts: FileConflict[]
     resolve: (resolutions: Map<string, ConflictResolution>) => void
@@ -59,6 +70,7 @@ interface DataroomState {
 
   resetStore: () => void
   initDataroom: () => Promise<void>
+  switchDataroom: (id: string) => Promise<void>
   addShareLink: (link: ShareLink) => void
   removeShareLink: (token: string) => void
 
@@ -96,6 +108,9 @@ interface DataroomState {
 export const useDataroomStore = create<DataroomState>((set, get) => ({
   dataroomId: null,
   dataroomName: null,
+  myDataroomId: null,
+  myDataroomName: null,
+  dataroomOwnerEmail: null,
   myRole: null,
   folders: [],
   files: [],
@@ -106,11 +121,15 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
   dragOverFolderId: null,
   isLoading: false,
   shareLinks: [],
+  sharedRooms: [],
   pendingFileConflicts: null,
 
   resetStore: () => set({
     dataroomId: null,
     dataroomName: null,
+    myDataroomId: null,
+    myDataroomName: null,
+    dataroomOwnerEmail: null,
     myRole: null,
     folders: [],
     files: [],
@@ -120,6 +139,7 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
     previewFileId: null,
     isLoading: true,
     shareLinks: [],
+    sharedRooms: [],
     pendingFileConflicts: null,
   }),
 
@@ -129,35 +149,59 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
   initDataroom: async () => {
     set({ isLoading: true })
     try {
+      const { auth } = await import("@/lib/firebase")
+      const myUid = auth.currentUser?.uid ?? null
+
       let rooms = await apiJSON<Record<string, unknown>[]>("/api/datarooms")
-      if (rooms.length === 0) {
+      const ownedRoom = rooms.find((r) => (r.owner_uid as string) === myUid)
+      if (!ownedRoom) {
         const created = await apiJSON<Record<string, unknown>>("/api/datarooms", {
           method: "POST",
           body: JSON.stringify({ name: "My Dataroom" }),
         })
-        rooms = [created]
+        rooms = [created, ...rooms]
       }
-      const dataroomId = rooms[0].id as string
+      const mainRoom = rooms.find((r) => (r.owner_uid as string) === myUid) ?? rooms[0]
+      const memberRooms = rooms.filter((r) => (r.owner_uid as string) !== myUid)
+
+      const dataroomId = mainRoom.id as string
       const [rawFolders, rawFiles, rawMembers] = await Promise.all([
         apiJSON<Record<string, unknown>[]>(`/api/datarooms/${dataroomId}/folders`),
         apiJSON<Record<string, unknown>[]>(`/api/datarooms/${dataroomId}/files`),
         apiJSON<Record<string, unknown>[]>(`/api/datarooms/${dataroomId}/members`),
       ])
-      const { auth } = await import("@/lib/firebase")
-      const myUid = auth.currentUser?.uid ?? null
       const me = rawMembers.find((m) => m.user_uid === myUid)
       const myRole = (me?.role as "owner" | "editor" | "viewer" | null) ?? null
       let shareLinks: ShareLink[] = []
       if (myRole === "owner") {
         shareLinks = await apiJSON<ShareLink[]>(`/api/datarooms/${dataroomId}/share-links`)
       }
+
+      // Resolve roles and owner emails for shared (member) rooms
+      const sharedRooms: SharedRoom[] = await Promise.all(
+        memberRooms.map(async (r) => {
+          const id = r.id as string
+          const members = await apiJSON<Record<string, unknown>[]>(`/api/datarooms/${id}/members`)
+          const entry = members.find((m) => m.user_uid === myUid)
+          const ownerEntry = members.find((m) => m.role === "owner")
+          const role = (entry?.role as "editor" | "viewer") ?? "viewer"
+          const ownerEmail = (ownerEntry?.email as string | undefined) ?? null
+          return { id, name: r.name as string, ownerEmail, role }
+        })
+      )
+
+      const myDataroomName = (mainRoom.name as string) ?? null
       set({
         dataroomId,
-        dataroomName: (rooms[0].name as string) ?? null,
+        dataroomName: myDataroomName,
+        myDataroomId: dataroomId,
+        myDataroomName,
+        dataroomOwnerEmail: null,
         myRole,
         folders: rawFolders.map(mapFolder),
         files: rawFiles.map(mapFile),
         shareLinks,
+        sharedRooms,
         isLoading: false,
       })
     } catch (e) {
@@ -498,6 +542,45 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
     if (!pendingFileConflicts) return
     pendingFileConflicts.cancel()
     set({ pendingFileConflicts: null })
+  },
+
+  switchDataroom: async (id) => {
+    const { sharedRooms, myDataroomId, myDataroomName } = get()
+    set({ isLoading: true, activeFolderId: null, selectedIds: [], expandedFolderIds: [], folders: [], files: [], shareLinks: [], previewFileId: null })
+    try {
+      const { auth } = await import("@/lib/firebase")
+      const myUid = auth.currentUser?.uid ?? null
+      const [rawFolders, rawFiles, rawMembers] = await Promise.all([
+        apiJSON<Record<string, unknown>[]>(`/api/datarooms/${id}/folders`),
+        apiJSON<Record<string, unknown>[]>(`/api/datarooms/${id}/files`),
+        apiJSON<Record<string, unknown>[]>(`/api/datarooms/${id}/members`),
+      ])
+      const me = rawMembers.find((m) => m.user_uid === myUid)
+      const ownerMember = rawMembers.find((m) => m.role === "owner")
+      const myRole = (me?.role as "owner" | "editor" | "viewer" | null) ?? null
+      const dataroomOwnerEmail = myRole !== "owner" ? ((ownerMember?.email as string | undefined) ?? null) : null
+      const dataroomName = id === myDataroomId
+        ? myDataroomName
+        : (sharedRooms.find((r) => r.id === id)?.name ?? null)
+      let shareLinks: ShareLink[] = []
+      if (myRole === "owner") {
+        shareLinks = await apiJSON<ShareLink[]>(`/api/datarooms/${id}/share-links`)
+      }
+      set({
+        dataroomId: id,
+        dataroomName,
+        dataroomOwnerEmail,
+        myRole,
+        folders: rawFolders.map(mapFolder),
+        files: rawFiles.map(mapFile),
+        shareLinks,
+        sharedRooms,
+        isLoading: false,
+      })
+    } catch (e) {
+      set({ isLoading: false })
+      throw e
+    }
   },
 
   addShareLink: (link) => set((s) => ({ shareLinks: [link, ...s.shareLinks] })),

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { User, Upload, Sun, Moon, LogOut, PanelLeftClose, PanelLeftOpen, Users, Link2 } from "lucide-react"
+import { User, Upload, Sun, Moon, LogOut, PanelLeftClose, PanelLeftOpen, Users, Link2, Database } from "lucide-react"
 import { useDataroomStore } from "@/stores/dataroomStore"
 import { useAuthStore } from "@/stores/authStore"
 import { Separator } from "@/components/ui/separator"
@@ -24,7 +24,7 @@ const SIDEBAR_MAX = 480
 const SIDEBAR_DEFAULT = 256
 
 export function GlobalSidebar() {
-  const { uploadFiles, moveFiles, moveFolder, clearSelection, myRole } = useDataroomStore()
+  const { uploadFiles, moveFiles, moveFolder, clearSelection, myRole, sharedRooms, switchDataroom, dataroomId, myDataroomId } = useDataroomStore()
   const isOwner = myRole === "owner"
   const { user, logout } = useAuthStore()
   const dragCounter = useRef(0)
@@ -219,6 +219,34 @@ export function GlobalSidebar() {
         <div className="h-full overflow-y-auto overflow-x-hidden scrollbar-thin">
           <div className="p-2">
             <FolderTree />
+            {sharedRooms.length > 0 && (
+              <div className="mt-3">
+                <p className="px-2 pb-1 text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Shared with me</p>
+                {myDataroomId && dataroomId !== myDataroomId && (
+                  <button
+                    onClick={() => switchDataroom(myDataroomId)}
+                    className="group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm w-full text-left hover:bg-accent transition-colors"
+                  >
+                    <Database className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <span className="flex-1 truncate min-w-0 text-muted-foreground">← My dataroom</span>
+                  </button>
+                )}
+                {sharedRooms.map((room) => (
+                  <button
+                    key={room.id}
+                    onClick={() => switchDataroom(room.id)}
+                    className={cn(
+                      "group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm w-full text-left hover:bg-accent transition-colors",
+                      dataroomId === room.id && "bg-accent font-medium"
+                    )}
+                  >
+                    <Database className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <span className="flex-1 truncate min-w-0">{room.ownerEmail ?? room.name}</span>
+                    <span className="text-[10px] text-muted-foreground shrink-0">{room.role}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

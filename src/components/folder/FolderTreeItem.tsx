@@ -62,6 +62,7 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
     downloadFolderAsZip,
   } = useDataroomStore()
   const isOwner = myRole === "owner"
+  const canEdit = myRole === "owner" || myRole === "editor"
   const navigateFolder = useNavigateFolder()
 
   const [createOpen, setCreateOpen] = useState(false)
@@ -178,26 +179,34 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
                 <DropdownMenuSeparator />
               </>
             )}
-            <DropdownMenuItem onClick={() => setCreateOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              New subfolder
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setRenameOpen(true)}>
-              <Pencil className="h-4 w-4 mr-2" />
-              Rename
-            </DropdownMenuItem>
+            {canEdit && (
+              <>
+                <DropdownMenuItem onClick={() => setCreateOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  New subfolder
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setRenameOpen(true)}>
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Rename
+                </DropdownMenuItem>
+              </>
+            )}
             <DropdownMenuItem onClick={() => { toast.promise(downloadFolderAsZip(folder.id, folder.name), { loading: "Preparing ZIP…", success: "Downloaded", error: "Failed to download" }) }}>
               <Download className="h-4 w-4 mr-2" />
               Download as ZIP
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="text-destructive focus:text-destructive"
-              onClick={() => setDeleteOpen(true)}
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Delete
-            </DropdownMenuItem>
+            {canEdit && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive"
+                  onClick={() => setDeleteOpen(true)}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
