@@ -1,0 +1,165 @@
+import { useState } from "react"
+import { FileText, MoreHorizontal, Pencil, Trash2 } from "lucide-react"
+import type { DataroomFile } from "@/types"
+import { useDataroomStore } from "@/stores/dataroomStore"
+import { cn } from "@/lib/utils"
+import { setDragItem, getDragItem, isInternalDrag } from "@/lib/dragItem"
+import { collectDroppedFiles, isFileDrag } from "@/lib/dropFiles"
+import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { RenameFileDialog } from "./RenameFileDialog"
+import { toast } from "sonner"
+
+// Shared across all FileTreeItem instances so that moving between sibling files
+// in the same folder doesn't flash-clear the parent folder highlight.
+let _clearHighlightTimer: ReturnType<typeof setTimeout> | null = null
+
+interface Props {
+  file: DataroomFile
+  depth: number
+}
+
+export function FileTreeItem({ file, depth }: Props) {
+  const { renameFile, deleteFile, previewFileId, setPreviewFile, uploadFiles, moveFiles, moveFolder, setDragOverFolder } = useDataroomStore()
+  const [renameOpen, setRenameOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+
+  const isPreviewed = previewFileId === file.id
+  const targetFolderId = file.folderId
+
+  function handleDragEnter(e: React.DragEvent) {
+    if (!isFileDrag(e) && !isInternalDrag(e)) return
+    e.preventDefault()
+    e.stopPropagation()
+    if (_clearHighlightTimer) { clearTimeout(_clearHighlightTimer); _clearHighlightTimer = null }
+    if (targetFolderId) setDragOverFolder(targetFolderId)
+  }
+
+  function handleDragLeave(e: React.DragEvent) {
+    e.stopPropagation()
+    const related = e.relatedTarget as Node | null
+    if (related && (e.currentTarget as HTMLElement).contains(related)) return
+    _clearHighlightTimer = setTimeout(() => {
+      useDataroomStore.getState().setDragOverFolder(null)
+      _clearHighlightTimer = null
+    }, 0)
+  }
+
+  function handleDragOver(e: React.DragEvent) {
+    if (!isFileDrag(e) && !isInternalDrag(e)) return
+    e.preventDefault()
+    e.stopPropagation()
+  }
+
+  async function handleDrop(e: React.DragEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    if (_clearHighlightTimer) { clearTimeout(_clearHighlightTimer); _clearHighlightTimer = null }
+    setDragOverFolder(null)
+    const item = getDragItem(e)
+    if (item) {
+      const items = item.bulk ?? [item]
+      const fileIds = items.filter((i) => i.type === "file").map((i) => i.id)
+      const folderItems = items.filter((i) => i.type === "folder")
+      if (fileIds.length > 0) await moveFiles(fileIds, targetFolderId)
+      await Promise.all(folderItems.map((i) => moveFolder(i.id, targetFolderId)))
+      return
+    }
+    const droppedFiles = collectDroppedFiles(e.dataTransfer)
+    await uploadFiles(droppedFiles, targetFolderId)
+  }
+
+  return (
+    <>
+      <div
+        draggable
+        onDragStart={(e) => { e.stopPropagation(); setDragItem(e, { id: file.id, type: "file" }) }}
+        onDragEnter={handleDragEnter}
+        onDragLeave={(e) => handleDragLeave(e)}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+        className={cn(
+          "group flex items-center gap-1 rounded-md py-1.5 cursor-pointer select-none text-sm hover:bg-accent",
+          isPreviewed && "bg-accent font-medium"
+        )}
+        style={{ paddingLeft: `${8 + depth * 12}px`, paddingRight: "8px" }}
+        onClick={() => setPreviewFile(isPreviewed ? null : file.id)}
+      >
+        <span className="h-4 w-4 shrink-0 invisible" />
+
+        <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+
+        <span className="flex-1 truncate ml-1 min-w-0 text-muted-foreground">{file.name}</span>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+            >
+              <MoreHorizontal className="h-3 w-3" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" onClick={(e) => e.stopPropagation()}>
+            <DropdownMenuItem onClick={() => setRenameOpen(true)}>
+              <Pencil className="h-4 w-4 mr-2" />
+              Rename
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive"
+              onClick={() => setDeleteOpen(true)}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      <RenameFileDialog
+        open={renameOpen}
+        initialValue={file.name}
+        onClose={() => setRenameOpen(false)}
+        onConfirm={(name) => { renameFile(file.id, name); toast.success("File renamed") }}
+      />
+
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete &ldquo;{file.name}&rdquo;?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This file will be permanently deleted and cannot be recovered.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => { deleteFile(file.id); toast.success(`"${file.name}" deleted`) }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  )
+}

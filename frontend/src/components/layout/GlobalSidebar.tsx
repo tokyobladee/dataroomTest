@@ -1,0 +1,266 @@
+import { useEffect, useRef, useState } from "react"
+import { User, Upload, Sun, Moon, LogOut, PanelLeftClose, PanelLeftOpen, Users, Link2, Database } from "lucide-react"
+import { useDataroomStore } from "@/stores/dataroomStore"
+import { useAuthStore } from "@/stores/authStore"
+import { Separator } from "@/components/ui/separator"
+import { collectDroppedFiles, isFileDrag } from "@/lib/dropFiles"
+import { getDragItem, isInternalDrag } from "@/lib/dragItem"
+import { FolderTree } from "@/components/folder/FolderTree"
+import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { MembersDialog } from "@/components/members/MembersDialog"
+import { ShareLinksDialog } from "@/components/share/ShareLinksDialog"
+
+const SIDEBAR_MIN = 180
+const SIDEBAR_MAX = 480
+const SIDEBAR_DEFAULT = 256
+
+export function GlobalSidebar() {
+  const { uploadFiles, moveFiles, moveFolder, clearSelection, myRole, sharedRooms, switchDataroom, dataroomId, myDataroomId } = useDataroomStore()
+  const isOwner = myRole === "owner"
+  const { user, logout } = useAuthStore()
+  const dragCounter = useRef(0)
+  const [isDragOver, setIsDragOver] = useState(false)
+  const [isOsDrag, setIsOsDrag] = useState(false)
+  const [collapsed, setCollapsed] = useState(false)
+  const [membersOpen, setMembersOpen] = useState(false)
+  const [shareOpen, setShareOpen] = useState(false)
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    const stored = localStorage.getItem("sidebar-width")
+    return stored ? Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, parseInt(stored, 10))) : SIDEBAR_DEFAULT
+  })
+  const isResizing = useRef(false)
+  const resizeStartX = useRef(0)
+  const resizeStartWidth = useRef(0)
+  const [resizing, setResizing] = useState(false)
+  const [isDark, setIsDark] = useState(() => {
+    const stored = localStorage.getItem("theme")
+    if (stored) return stored === "dark"
+    return window.matchMedia("(prefers-color-scheme: dark)").matches
+  })
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", isDark)
+    localStorage.setItem("theme", isDark ? "dark" : "light")
+  }, [isDark])
+
+  useEffect(() => {
+    function onMouseMove(e: MouseEvent) {
+      if (!isResizing.current) return
+      const newWidth = Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, resizeStartWidth.current + e.clientX - resizeStartX.current))
+      setSidebarWidth(newWidth)
+    }
+    function onMouseUp() {
+      if (!isResizing.current) return
+      isResizing.current = false
+      setResizing(false)
+      document.body.style.cursor = ""
+      document.body.style.userSelect = ""
+      setSidebarWidth((w) => { localStorage.setItem("sidebar-width", String(w)); return w })
+    }
+    document.addEventListener("mousemove", onMouseMove)
+    document.addEventListener("mouseup", onMouseUp)
+    return () => {
+      document.removeEventListener("mousemove", onMouseMove)
+      document.removeEventListener("mouseup", onMouseUp)
+    }
+  }, [])
+
+  function handleResizeStart(e: React.MouseEvent) {
+    e.preventDefault()
+    isResizing.current = true
+    setResizing(true)
+    resizeStartX.current = e.clientX
+    resizeStartWidth.current = sidebarWidth
+    document.body.style.cursor = "col-resize"
+    document.body.style.userSelect = "none"
+  }
+
+  function handleDragEnter(e: React.DragEvent) {
+    if (!isFileDrag(e) && !isInternalDrag(e)) return
+    e.preventDefault()
+    if (dragCounter.current === 0) setIsOsDrag(isFileDrag(e))
+    dragCounter.current++
+    setIsDragOver(true)
+  }
+
+  function handleDragLeave() {
+    dragCounter.current--
+    if (dragCounter.current === 0) { setIsDragOver(false); setIsOsDrag(false) }
+  }
+
+  function handleDragOver(e: React.DragEvent) {
+    if (!isFileDrag(e) && !isInternalDrag(e)) return
+    e.preventDefault()
+  }
+
+  async function handleDrop(e: React.DragEvent) {
+    e.preventDefault()
+    dragCounter.current = 0
+    setIsDragOver(false)
+    setIsOsDrag(false)
+    const item = getDragItem(e)
+    if (item) {
+      const items = item.bulk ?? [item]
+      const fileIds = items.filter((i) => i.type === "file").map((i) => i.id)
+      const folderItems = items.filter((i) => i.type === "folder")
+      if (fileIds.length > 0) await moveFiles(fileIds, null)
+      await Promise.all(folderItems.map((i) => moveFolder(i.id, null)))
+      clearSelection()
+      return
+    }
+    const droppedFiles = collectDroppedFiles(e.dataTransfer)
+    await uploadFiles(droppedFiles, null)
+  }
+
+  return (
+    <aside
+      className={cn(
+        "relative flex flex-col shrink-0 border-r bg-background h-screen sticky top-0 overflow-hidden",
+        !resizing && "transition-[width] duration-200",
+        collapsed ? "w-12" : ""
+      )}
+      style={collapsed ? undefined : { width: sidebarWidth }}
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
+      <div className="flex items-center gap-2 px-2 h-14 shrink-0">
+        {!collapsed && (
+          <>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-2.5 flex-1 min-w-0 rounded-md px-1 py-1 hover:bg-accent transition-colors text-left">
+                  <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center shrink-0 overflow-hidden">
+                    {user?.picture ? (
+                      <img src={user.picture} alt={user.name ?? ""} className="h-full w-full object-cover" referrerPolicy="no-referrer" />
+                    ) : (
+                      <User className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{user?.name ?? user?.email ?? "User"}</p>
+                    <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                  </div>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-52">
+                {isOwner && (
+                  <>
+                    <DropdownMenuItem onClick={() => setMembersOpen(true)}>
+                      <Users className="h-4 w-4 mr-2" />
+                      Members
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setShareOpen(true)}>
+                      <Link2 className="h-4 w-4 mr-2" />
+                      Share links
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
+                <DropdownMenuItem onClick={() => logout()} className="text-destructive focus:text-destructive">
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+                  className="h-7 w-7 shrink-0"
+                  onClick={() => setIsDark((d) => !d)}
+                >
+                  {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">{isDark ? "Light mode" : "Dark mode"}</TooltipContent>
+            </Tooltip>
+          </>
+        )}
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              className={cn("h-7 w-7 shrink-0", !collapsed && "ml-auto")}
+              onClick={() => setCollapsed((c) => !c)}
+            >
+              {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="right">{collapsed ? "Expand sidebar" : "Collapse sidebar"}</TooltipContent>
+        </Tooltip>
+      </div>
+
+      {!collapsed && <Separator />}
+
+      <div className={cn("relative flex-1 min-h-0", collapsed && "invisible")}>
+        {isDragOver && isOsDrag && (
+          <div className="absolute inset-0 z-20 pointer-events-none rounded-lg border-2 border-dashed border-primary bg-primary/5 flex flex-col items-center justify-center gap-2">
+            <Upload className="h-5 w-5 text-primary" />
+            <p className="text-xs font-semibold text-primary text-center px-3">Drop to add to Home</p>
+          </div>
+        )}
+        <div className="h-full overflow-y-auto overflow-x-hidden scrollbar-thin">
+          <div className="p-2">
+            <FolderTree />
+            {sharedRooms.length > 0 && (
+              <div className="mt-3">
+                <p className="px-2 pb-1 text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Shared with me</p>
+                {myDataroomId && dataroomId !== myDataroomId && (
+                  <button
+                    onClick={() => switchDataroom(myDataroomId)}
+                    className="group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm w-full text-left hover:bg-accent transition-colors"
+                  >
+                    <Database className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <span className="flex-1 truncate min-w-0 text-muted-foreground">← My dataroom</span>
+                  </button>
+                )}
+                {sharedRooms.map((room) => (
+                  <button
+                    key={room.id}
+                    onClick={() => switchDataroom(room.id)}
+                    className={cn(
+                      "group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm w-full text-left hover:bg-accent transition-colors",
+                      dataroomId === room.id && "bg-accent font-medium"
+                    )}
+                  >
+                    <Database className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <span className="flex-1 truncate min-w-0">{room.ownerEmail ?? room.name}</span>
+                    <span className="text-[10px] text-muted-foreground shrink-0">{room.role}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <MembersDialog open={membersOpen} onClose={() => setMembersOpen(false)} />
+      <ShareLinksDialog open={shareOpen} onClose={() => setShareOpen(false)} />
+
+      {/* Resize handle */}
+      {!collapsed && (
+        <div
+          className="absolute right-0 top-0 h-full w-1 cursor-col-resize hover:bg-primary/30 active:bg-primary/50 transition-colors z-20"
+          onMouseDown={handleResizeStart}
+        />
+      )}
+    </aside>
+  )
+}

@@ -7,13 +7,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
-
 # Editor directories and files
-docs
 .vscode/*
 !.vscode/extensions.json
 .idea
@@ -24,3 +18,29 @@ docs
 *.sln
 *.sw?
 *.claude
+.env
+.env.local
+.env.*.local
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+
+# Docs (task specs, not for repo)
+docs/
+
+# Python
+backend/venv/
+backend/__pycache__/
+backend/**/__pycache__/
+backend/**/*.pyc
+backend/**/*.pyo
+backend/.pytest_cache/
+
+# Firebase service account (contains private key — never commit)
+backend/firebase-service-account.json
+backend/dataroom-743bb-firebase-adminsdk-fbsvc-bc11ec2f14.json
+
+# Uploaded files
+backend/uploads/
