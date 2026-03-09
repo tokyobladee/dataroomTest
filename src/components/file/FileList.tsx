@@ -1,12 +1,14 @@
 import { useRef, useState } from "react"
 import { useRubberBand } from "@/lib/useRubberBand"
-import { Check, FileText, Folder as FolderIcon, ChevronRight, Search, X, Upload, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
+import { Check, FileText, Folder as FolderIcon, ChevronRight, Search, X, Upload, HardDrive, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
 import { useDataroomStore } from "@/stores/dataroomStore"
 import { useAuthStore } from "@/stores/authStore"
 import { useNavigateFolder } from "@/lib/useNavigateFolder"
 import { FolderCard } from "@/components/folder/FolderCard"
 import { FileItem } from "./FileItem"
 import { collectDroppedFiles, isFileDrag } from "@/lib/dropFiles"
+import { DriveImportDialog } from "@/components/drive/DriveImportDialog"
+import { toast } from "sonner"
 import { getDragItem, isInternalDrag } from "@/lib/dragItem"
 import { cn } from "@/lib/utils"
 import type { Folder } from "@/types"
@@ -23,6 +25,8 @@ export function FileList() {
   const [query, setQuery] = useState("")
   const [sortKey, setSortKey] = useState<SortKey>("name")
   const [sortDir, setSortDir] = useState<SortDir>("asc")
+  const [driveOpen, setDriveOpen] = useState(false)
+  const uploadInputRef = useRef<HTMLInputElement>(null)
   const dragCounter = useRef(0)
   const tableContainerRef = useRef<HTMLDivElement>(null)
   const { onMouseDown: onRubberBandMouseDown, displayRect } = useRubberBand(tableContainerRef, selectAll)
@@ -220,6 +224,42 @@ export function FileList() {
                 <p className="text-sm text-muted-foreground mt-1">
                   Drag PDF files here or click the + button to upload
                 </p>
+                <div className="flex items-center gap-2 mt-4">
+                  <button
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-md border text-sm hover:bg-accent transition-colors"
+                    onClick={() => setDriveOpen(true)}
+                  >
+                    <HardDrive className="h-4 w-4" />
+                    Import from Drive
+                  </button>
+                  <button
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-foreground text-background text-sm hover:opacity-90 transition-opacity"
+                    onClick={() => uploadInputRef.current?.click()}
+                  >
+                    <Upload className="h-4 w-4" />
+                    Upload files
+                  </button>
+                </div>
+                <input
+                  ref={uploadInputRef}
+                  type="file"
+                  accept="application/pdf"
+                  multiple
+                  className="hidden"
+                  onChange={async (e) => {
+                    const files = Array.from(e.target.files ?? []).filter((f) => f.type === "application/pdf")
+                    if (files.length === 0) return
+                    try {
+                      await uploadFiles(files, activeFolderId)
+                      toast.success(`${files.length} file${files.length > 1 ? "s" : ""} uploaded`)
+                    } catch {
+                      toast.error("Failed to upload files")
+                    } finally {
+                      e.target.value = ""
+                    }
+                  }}
+                />
+                <DriveImportDialog open={driveOpen} onClose={() => setDriveOpen(false)} />
               </div>
             ) : (
               <table className="w-full text-sm border-collapse">

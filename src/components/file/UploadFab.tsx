@@ -7,7 +7,11 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { DriveImportDialog } from "@/components/drive/DriveImportDialog"
 
 export function UploadFab() {
-  const { uploadFiles, activeFolderId } = useDataroomStore()
+  const { uploadFiles, activeFolderId, files, folders } = useDataroomStore()
+
+  const isEmpty =
+    files.filter((f) => f.folderId === activeFolderId).length === 0 &&
+    folders.filter((f) => f.parentId === activeFolderId).length === 0
   const inputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
   const [driveOpen, setDriveOpen] = useState(false)
@@ -35,6 +39,8 @@ export function UploadFab() {
       if (inputRef.current) inputRef.current.value = ""
     }
   }
+
+  if (isEmpty) return null
 
   return (
     <>
