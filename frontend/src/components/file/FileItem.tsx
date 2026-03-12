@@ -106,8 +106,8 @@ export function FileItem({ file }: Props) {
             {isShared && <Share2 className="h-3 w-3 text-muted-foreground shrink-0" />}
           </div>
         </td>
-        <td className="px-3 py-2.5 text-xs text-muted-foreground">{formatSize(file.size)}</td>
-        <td className="px-3 py-2.5 text-xs text-muted-foreground">{formatDate(file.createdAt)}</td>
+        <td className="py-2.5 text-xs text-muted-foreground">{formatSize(file.size)}</td>
+        <td className="py-2.5 text-xs text-muted-foreground">{formatDate(file.createdAt)}</td>
         <td className="px-3 py-2.5 text-right">
           <div className="flex items-center justify-end gap-1">
             <Button
