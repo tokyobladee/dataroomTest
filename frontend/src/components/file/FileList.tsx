@@ -167,7 +167,8 @@ export function FileList() {
                 className="hover:text-foreground transition-colors"
                 onClick={() => navigateFolder(null)}
               >
-                {myRole === "owner" ? (user?.email ?? "Home") : (dataroomOwnerEmail ?? dataroomName ?? "Home")}
+                {myRole === "owner" ? (user?.email === null ? "Home" : "Home" + "(" + user?.email + ")" ) 
+                : (dataroomOwnerEmail === null ? (dataroomName ?? "Home") : "Home" + "(" + dataroomOwnerEmail + ")")}
               </button>
               {breadcrumb.map((crumb) => (
                 <span key={crumb.id} className="flex items-center gap-1">
