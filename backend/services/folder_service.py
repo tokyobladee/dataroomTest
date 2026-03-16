@@ -3,8 +3,9 @@ from repositories.base import FolderRepository, MemberRepository, FolderDTO
 
 class FolderService:
     def __init__(self, folder_repo: FolderRepository, member_repo: MemberRepository):
-        self._folders = folder_repo
-        self._members = member_repo
+        self._folders = folder_repo;
+        self._members = member_repo;
+    
 
     def list(self, dataroom_id: str, user_uid: str) -> list[FolderDTO]:
         self._assert_access(dataroom_id, user_uid)

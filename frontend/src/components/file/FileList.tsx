@@ -1,6 +1,6 @@
 import { useRef, useState } from "react"
 import { useRubberBand } from "@/lib/useRubberBand"
-import { Check, FileText, Folder as FolderIcon, ChevronRight, Search, X, Upload, HardDrive, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
+import { Check, FileText, Folder as FolderIcon, ChevronRight, Search, X, Upload, HardDrive, ArrowUpDown, ArrowUp, ArrowDown, Plus } from "lucide-react"
 import { useDataroomStore } from "@/stores/dataroomStore"
 import { useAuthStore } from "@/stores/authStore"
 import { useNavigateFolder } from "@/lib/useNavigateFolder"
@@ -8,6 +8,7 @@ import { FolderCard } from "@/components/folder/FolderCard"
 import { FileItem } from "./FileItem"
 import { collectDroppedFiles, isFileDrag } from "@/lib/dropFiles"
 import { DriveImportDialog } from "@/components/drive/DriveImportDialog"
+import { FolderDialog } from "@/components/folder/FolderDialog"
 import { toast } from "sonner"
 import { getDragItem, isInternalDrag } from "@/lib/dragItem"
 import { cn } from "@/lib/utils"
@@ -17,7 +18,7 @@ type SortKey = "name" | "size" | "date"
 type SortDir = "asc" | "desc"
 
 export function FileList() {
-  const { files, folders, activeFolderId, uploadFiles, moveFiles, moveFolder, selectedIds, selectAll, clearSelection, setPreviewFile, isLoading, myRole, dataroomOwnerEmail, dataroomName } = useDataroomStore()
+  const { files, folders, activeFolderId, uploadFiles, moveFiles, moveFolder, selectedIds, selectAll, clearSelection, setPreviewFile, isLoading, myRole, dataroomOwnerEmail, dataroomName, createFolder } = useDataroomStore()
   const canEdit = myRole === "owner" || myRole === "editor"
   const { user } = useAuthStore()
   const navigateFolder = useNavigateFolder()
@@ -27,6 +28,7 @@ export function FileList() {
   const [sortKey, setSortKey] = useState<SortKey>("name")
   const [sortDir, setSortDir] = useState<SortDir>("asc")
   const [driveOpen, setDriveOpen] = useState(false)
+  const [createFolderOpen, setCreateFolderOpen] = useState(false)
   const uploadInputRef = useRef<HTMLInputElement>(null)
   const dragCounter = useRef(0)
   const tableContainerRef = useRef<HTMLDivElement>(null)
@@ -162,36 +164,62 @@ export function FileList() {
       ) : (
         <>
           <div className="flex flex-col gap-2 shrink-0">
-            <nav className="flex items-center gap-1 text-sm text-muted-foreground">
+            <nav className="flex items-center gap-1 text-sm text-muted-foreground min-w-0">
               <button
-                className="hover:text-foreground transition-colors"
+                className="hover:text-foreground transition-colors shrink-0"
                 onClick={() => navigateFolder(null)}
               >
-                {myRole === "owner" ? (user?.email ?? "Home") : (dataroomOwnerEmail ?? dataroomName ?? "Home")}
+                {myRole === "owner"
+                  ? (user?.email ? `Home (${user.email})` : "Home")
+                  : (dataroomOwnerEmail ? `Home (${dataroomOwnerEmail})` : (dataroomName ?? "Home"))}
               </button>
-              {breadcrumb.map((crumb) => (
-                <span key={crumb.id} className="flex items-center gap-1">
-                  <ChevronRight className="h-3.5 w-3.5" />
+              {breadcrumb.map((crumb, i) => (
+                <span key={crumb.id} className="flex items-center gap-1 min-w-0">
+                  <ChevronRight className="h-3.5 w-3.5 shrink-0" />
                   <button
-                    className="hover:text-foreground transition-colors"
+                    className="hover:text-foreground transition-colors truncate max-w-[200px]"
                     onClick={() => navigateFolder(crumb.id)}
                   >
                     {crumb.name}
                   </button>
+                  {i === breadcrumb.length - 1 && (() => {
+                    const parts = [
+                      rawSubfolders.length > 0 ? `${rawSubfolders.length} folder${rawSubfolders.length > 1 ? "s" : ""}` : "",
+                      rawFiles.length > 0 ? `${rawFiles.length} file${rawFiles.length > 1 ? "s" : ""}` : "",
+                    ].filter(Boolean).join(" · ")
+                    return parts ? <span className="shrink-0 text-muted-foreground/60">({parts})</span> : null
+                  })()}
                 </span>
               ))}
+              {breadcrumb.length === 0 && (() => {
+                const parts = [
+                  rawSubfolders.length > 0 ? `${rawSubfolders.length} folder${rawSubfolders.length > 1 ? "s" : ""}` : "",
+                  rawFiles.length > 0 ? `${rawFiles.length} file${rawFiles.length > 1 ? "s" : ""}` : "",
+                ].filter(Boolean).join(" · ")
+                return parts ? <span className="shrink-0 text-muted-foreground/60">({parts})</span> : null
+              })()}
             </nav>
-            <div className="flex items-baseline gap-2">
-              <h2 className="text-lg font-semibold">
+            <div className="flex items-baseline gap-3">
+              <h2 className="text-lg font-semibold shrink-0">
                 {activeFolder ? activeFolder.name : "Home"}
               </h2>
-              <span className="text-sm text-muted-foreground">
-                {rawSubfolders.length > 0 && `${rawSubfolders.length} folder${rawSubfolders.length > 1 ? "s" : ""}`}
-                {rawSubfolders.length > 0 && rawFiles.length > 0 && " · "}
-                {rawFiles.length > 0 && `${rawFiles.length} file${rawFiles.length > 1 ? "s" : ""}`}
-              </span>
+              {canEdit && (
+                <button
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => setCreateFolderOpen(true)}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  New folder
+                </button>
+              )}
             </div>
           </div>
+          <FolderDialog
+            open={createFolderOpen}
+            mode="create"
+            onClose={() => setCreateFolderOpen(false)}
+            onConfirm={(name) => createFolder(name, activeFolderId)}
+          />
 
           <div
             ref={tableContainerRef}

@@ -155,7 +155,7 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
 
         <div className="shrink-0 w-5 h-5 flex items-center justify-center relative">
           {hasChildren && (
-            <span className="text-xs text-muted-foreground/50 tabular-nums group-hover:opacity-0 transition-opacity">
+            <span className="flex-1 truncate ml-1 min-w-0 tabular-nums group-hover:opacity-0 transition-opacity">
               {children.length + folderFiles.length}
             </span>
           )}
@@ -183,7 +183,7 @@ export function FolderTreeItem({ folder, depth, allFolders }: Props) {
               <>
                 <DropdownMenuItem onClick={() => setCreateOpen(true)}>
                   <Plus className="h-4 w-4 mr-2" />
-                  New subfolder
+                  New Folder
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setRenameOpen(true)}>
                   <Pencil className="h-4 w-4 mr-2" />
