@@ -45,6 +45,18 @@
     --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/* Sonner toast: close button on the right, vertically centered */
+[data-sonner-toast] {
+  padding-right: 2.25rem !important;
+}
+[data-sonner-toast] [data-close-button] {
+  position: absolute !important;
+  top: 50% !important;
+  right: 8px !important;
+  left: auto !important;
+  transform: translateY(-50%) !important;
+}
+
 :root {
     --radius: 0.625rem;
     --background: oklch(1 0 0);
