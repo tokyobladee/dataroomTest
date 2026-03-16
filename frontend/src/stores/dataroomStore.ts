@@ -82,7 +82,7 @@ interface DataroomState {
   deleteFolder: (id: string) => Promise<void>
 
   uploadFile: (file: File, folderId: string | null) => Promise<void>
-  uploadFiles: (files: File[], folderId: string | null) => Promise<void>
+  uploadFiles: (files: File[], folderId: string | null) => Promise<number>
   moveFile: (id: string, folderId: string | null) => Promise<void>
   moveFiles: (fileIds: string[], targetFolderId: string | null) => Promise<void>
   renameFile: (id: string, name: string) => Promise<void>
@@ -335,6 +335,7 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
     }
 
     await Promise.all(finalFiles.map((f) => get().uploadFile(f, folderId)))
+    return finalFiles.length
   },
 
   moveFile: async (id, folderId) => {

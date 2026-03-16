@@ -25,8 +25,8 @@ export function UploadFab() {
 
     setUploading(true)
     try {
-      await uploadFiles(files, activeFolderId)
-      toast.success(`${files.length} file${files.length > 1 ? "s" : ""} uploaded`)
+      const uploaded = await uploadFiles(files, activeFolderId)
+      if (uploaded > 0) toast.success(`${uploaded} file${uploaded > 1 ? "s" : ""} uploaded`)
     } catch {
       toast.error("Failed to upload files. Please try again.")
     } finally {

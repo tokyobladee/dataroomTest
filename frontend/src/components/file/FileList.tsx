@@ -187,7 +187,7 @@ export function FileList() {
                       rawSubfolders.length > 0 ? `${rawSubfolders.length} folder${rawSubfolders.length > 1 ? "s" : ""}` : "",
                       rawFiles.length > 0 ? `${rawFiles.length} file${rawFiles.length > 1 ? "s" : ""}` : "",
                     ].filter(Boolean).join(" · ")
-                    return parts ? <span className="shrink-0 text-muted-foreground/60">({parts})</span> : null
+                    return parts ? <span className="shrink-0 leading-none self-center text-muted-foreground/60">({parts})</span> : null
                   })()}
                 </span>
               ))}
@@ -196,10 +196,10 @@ export function FileList() {
                   rawSubfolders.length > 0 ? `${rawSubfolders.length} folder${rawSubfolders.length > 1 ? "s" : ""}` : "",
                   rawFiles.length > 0 ? `${rawFiles.length} file${rawFiles.length > 1 ? "s" : ""}` : "",
                 ].filter(Boolean).join(" · ")
-                return parts ? <span className="shrink-0 text-muted-foreground/60">({parts})</span> : null
+                return parts ? <span className="shrink-0 leading-none self-center text-muted-foreground/60">({parts})</span> : null
               })()}
             </nav>
-            <div className="flex items-baseline gap-3">
+            <div className="flex items-center gap-3">
               <h2 className="text-lg font-semibold shrink-0">
                 {activeFolder ? activeFolder.name : "Home"}
               </h2>
@@ -281,8 +281,8 @@ export function FileList() {
                         const files = Array.from(e.target.files ?? [])
                         if (files.length === 0) return
                         try {
-                          await uploadFiles(files, activeFolderId)
-                          toast.success(`${files.length} file${files.length > 1 ? "s" : ""} uploaded`)
+                          const uploaded = await uploadFiles(files, activeFolderId)
+                          if (uploaded > 0) toast.success(`${uploaded} file${uploaded > 1 ? "s" : ""} uploaded`)
                         } catch {
                           toast.error("Failed to upload files")
                         } finally {
