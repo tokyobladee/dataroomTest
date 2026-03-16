@@ -80,6 +80,7 @@ export function FileList() {
 
   function handleDragEnter(e: React.DragEvent) {
     if (!isFileDrag(e) && !isInternalDrag(e)) return
+    if (isFileDrag(e) && !canEdit) return
     e.preventDefault()
     if (dragCounter.current === 0) setIsOsDrag(isFileDrag(e))
     dragCounter.current++
@@ -93,6 +94,7 @@ export function FileList() {
 
   function handleDragOver(e: React.DragEvent) {
     if (!isFileDrag(e) && !isInternalDrag(e)) return
+    if (isFileDrag(e) && !canEdit) return
     e.preventDefault()
   }
 
@@ -103,6 +105,7 @@ export function FileList() {
     setIsOsDrag(false)
     const item = getDragItem(e)
     if (item) {
+      if (!canEdit) return
       const items = item.bulk ?? [item]
       const fileIds = items.filter((i) => i.type === "file").map((i) => i.id)
       const folderItems = items.filter((i) => i.type === "folder")
@@ -110,6 +113,7 @@ export function FileList() {
       await Promise.all(folderItems.map((i) => moveFolder(i.id, activeFolderId)))
       return
     }
+    if (!canEdit) return
     const droppedFiles = collectDroppedFiles(e.dataTransfer)
     await uploadFiles(droppedFiles, activeFolderId)
   }
@@ -174,7 +178,7 @@ export function FileList() {
                   : (dataroomOwnerEmail ? `Home (${dataroomOwnerEmail})` : (dataroomName ?? "Home"))}
               </button>
               {breadcrumb.map((crumb, i) => (
-                <span key={crumb.id} className="flex items-center gap-1 min-w-0">
+                <span key={crumb.id} className="flex items-baseline gap-1 min-w-0">
                   <ChevronRight className="h-3.5 w-3.5 shrink-0" />
                   <button
                     className="hover:text-foreground transition-colors truncate max-w-[200px]"
@@ -187,7 +191,7 @@ export function FileList() {
                       rawSubfolders.length > 0 ? `${rawSubfolders.length} folder${rawSubfolders.length > 1 ? "s" : ""}` : "",
                       rawFiles.length > 0 ? `${rawFiles.length} file${rawFiles.length > 1 ? "s" : ""}` : "",
                     ].filter(Boolean).join(" · ")
-                    return parts ? <span className="shrink-0 leading-none self-center text-muted-foreground/60">({parts})</span> : null
+                    return parts ? <span className="shrink-0 text-muted-foreground/60">({parts})</span> : null
                   })()}
                 </span>
               ))}
@@ -196,7 +200,7 @@ export function FileList() {
                   rawSubfolders.length > 0 ? `${rawSubfolders.length} folder${rawSubfolders.length > 1 ? "s" : ""}` : "",
                   rawFiles.length > 0 ? `${rawFiles.length} file${rawFiles.length > 1 ? "s" : ""}` : "",
                 ].filter(Boolean).join(" · ")
-                return parts ? <span className="shrink-0 leading-none self-center text-muted-foreground/60">({parts})</span> : null
+                return parts ? <span className="shrink-0 text-muted-foreground/60">({parts})</span> : null
               })()}
             </nav>
             <div className="flex items-center gap-3">

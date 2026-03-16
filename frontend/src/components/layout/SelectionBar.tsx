@@ -20,7 +20,8 @@ interface Props {
 }
 
 export function SelectionBar({ confirmOpen: externalOpen, onConfirmOpenChange }: Props) {
-  const { selectedIds, clearSelection, deleteSelected, downloadSelectionAsZip } = useDataroomStore()
+  const { selectedIds, clearSelection, deleteSelected, downloadSelectionAsZip, myRole } = useDataroomStore()
+  const canEdit = myRole === "owner" || myRole === "editor"
   const [internalOpen, setInternalOpen] = useState(false)
 
   const confirmOpen = externalOpen ?? internalOpen
@@ -51,16 +52,20 @@ export function SelectionBar({ confirmOpen: externalOpen, onConfirmOpenChange }:
           <Download className="h-4 w-4" />
           Download
         </Button>
-        <div className="h-4 w-px bg-border" />
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-destructive hover:text-destructive hover:bg-destructive/10 gap-2"
-          onClick={() => setConfirmOpen(true)}
-        >
-          <Trash2 className="h-4 w-4" />
-          Delete
-        </Button>
+        {canEdit && (
+          <>
+            <div className="h-4 w-px bg-border" />
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-destructive hover:text-destructive hover:bg-destructive/10 gap-2"
+              onClick={() => setConfirmOpen(true)}
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete
+            </Button>
+          </>
+        )}
         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={clearSelection}>
           <X className="h-4 w-4" />
         </Button>
