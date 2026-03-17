@@ -171,7 +171,7 @@ export function FolderCard({ folder }: Props) {
                 <>
                   <DropdownMenuItem onClick={() => setCreateOpen(true)}>
                     <Plus className="h-4 w-4 mr-2" />
-                    New subfolder
+                    New folder
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setRenameOpen(true)}>
                     <Pencil className="h-4 w-4 mr-2" />

@@ -92,18 +92,6 @@ export function ShareFolderDialog({ open, onClose, folderId, fileId, itemName }:
         {!createdUrl ? (
           <div className="flex flex-col gap-4">
             <div className="flex gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-1 flex-1">
-                    {permissions === "viewer" ? "Viewer" : "Editor"}
-                    <ChevronDown className="h-3.5 w-3.5 opacity-50" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem onClick={() => setPermissions("viewer")}>Viewer</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setPermissions("editor")}>Editor</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

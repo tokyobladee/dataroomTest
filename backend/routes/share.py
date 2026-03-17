@@ -105,10 +105,11 @@ def share_download(token: str, file_id: str):
         data = _storage().load(file_dto.storage_path)
     except ValueError as e:
         return jsonify({"error": str(e)}), 404
+    as_attachment = request.args.get("download") == "1"
     return send_file(
         io.BytesIO(data),
         mimetype=file_dto.mime_type or "application/octet-stream",
-        as_attachment=False,
+        as_attachment=as_attachment,
         download_name=file_dto.name,
     )
 

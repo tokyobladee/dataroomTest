@@ -318,7 +318,7 @@ export const useDataroomStore = create<DataroomState>((set, get) => ({
     let finalFiles = files
     if (conflicts.length > 0) {
       const resolutions = await _requestFileConflictResolution(conflicts)
-      if (!resolutions) return
+      if (!resolutions) return 0
 
       finalFiles = []
       for (const file of files) {
