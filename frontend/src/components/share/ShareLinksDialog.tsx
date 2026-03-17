@@ -16,7 +16,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { toast } from "sonner"
-import { cn } from "@/lib/utils"
 import type { Folder as FolderType } from "@/types"
 
 interface ShareLink {
@@ -68,7 +67,7 @@ export function ShareLinksDialog({ open, onClose }: Props) {
   const [links, setLinks] = useState<ShareLink[]>([])
   const [loading, setLoading] = useState(false)
   const [creating, setCreating] = useState(false)
-  const [newPermissions, setNewPermissions] = useState<"viewer" | "editor">("viewer")
+  const newPermissions = "viewer"
   const [newExpiry, setNewExpiry] = useState<{ label: string; days: number | null }>(EXPIRY_OPTIONS[0])
   const [copiedToken, setCopiedToken] = useState<string | null>(null)
 
@@ -159,19 +158,6 @@ export function ShareLinksDialog({ open, onClose }: Props) {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="gap-1">
-                {newPermissions === "viewer" ? "Viewer" : "Editor"}
-                <ChevronDown className="h-3.5 w-3.5 opacity-50" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => setNewPermissions("viewer")}>Viewer</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setNewPermissions("editor")}>Editor</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1">
                 {newExpiry.label}
                 <ChevronDown className="h-3.5 w-3.5 opacity-50" />
               </Button>
@@ -209,14 +195,6 @@ export function ShareLinksDialog({ open, onClose }: Props) {
                 <div className="flex-1 min-w-0">
                   {resolveTarget(link)}
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    <span className={cn(
-                      "inline-flex items-center rounded px-1 py-0.5 text-[10px] font-medium mr-1",
-                      link.permissions === "editor"
-                        ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
-                        : "bg-muted text-muted-foreground"
-                    )}>
-                      {link.permissions}
-                    </span>
                     Expires: {formatExpiry(link.expires_at)}
                   </p>
                   <p className="text-xs font-mono text-muted-foreground truncate mt-0.5">

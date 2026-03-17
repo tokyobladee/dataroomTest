@@ -9,6 +9,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
 type ActionType = "copy" | "rename" | "skip"
 
@@ -24,7 +25,6 @@ export function FileConflictDialog() {
 
   const [rows, setRows] = useState<Record<string, RowState>>({})
 
-  // Reset row state whenever the dialog opens with new conflicts
   useEffect(() => {
     if (open && conflicts.length > 0) {
       const initial: Record<string, RowState> = {}
@@ -67,7 +67,7 @@ export function FileConflictDialog() {
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) cancelFileConflicts() }}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-xl">
         <DialogHeader>
           <DialogTitle>
             {conflicts.length === 1
@@ -80,39 +80,31 @@ export function FileConflictDialog() {
           Choose what to do with each conflicting file.
         </p>
 
-        <div className="flex flex-col gap-4 max-h-[60vh] overflow-y-auto pr-1 scrollbar-thin">
+        <div className="flex flex-col gap-3 max-h-[60vh] overflow-y-auto pr-1 scrollbar-thin">
           {conflicts.map((conflict) => {
             const row = rows[conflict.id] ?? { action: "copy", renameValue: conflict.fileName }
             return (
               <div key={conflict.id} className="flex flex-col gap-2">
-                <p className="text-sm font-medium truncate" title={conflict.fileName}>
-                  {conflict.fileName}
-                </p>
-                <div className="flex items-center gap-1">
-                  <Button
-                    size="sm"
-                    variant={row.action === "copy" ? "outline" : "ghost"}
-                    className="flex-1 text-xs"
-                    onClick={() => setAction(conflict.id, "copy")}
-                  >
-                    Keep as copy
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={row.action === "rename" ? "outline" : "ghost"}
-                    className="flex-1 text-xs"
-                    onClick={() => setAction(conflict.id, "rename")}
-                  >
-                    Rename
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={row.action === "skip" ? "outline" : "ghost"}
-                    className="flex-1 text-xs"
-                    onClick={() => setAction(conflict.id, "skip")}
-                  >
-                    Skip
-                  </Button>
+                <div className="flex items-center gap-3">
+                  <span className="flex-1 text-sm font-medium truncate min-w-0" title={conflict.fileName}>
+                    {conflict.fileName}
+                  </span>
+                  <div className="flex items-center gap-1 shrink-0">
+                    {(["copy", "rename", "skip"] as ActionType[]).map((action) => (
+                      <button
+                        key={action}
+                        onClick={() => setAction(conflict.id, action)}
+                        className={cn(
+                          "h-7 px-2.5 rounded-md text-xs font-medium transition-colors",
+                          row.action === action
+                            ? "bg-secondary text-secondary-foreground"
+                            : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                        )}
+                      >
+                        {action === "copy" ? "Keep as copy" : action === "rename" ? "Rename" : "Skip"}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 {row.action === "copy" && (

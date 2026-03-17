@@ -19,12 +19,40 @@ export function FilePreviewPanel() {
     const stored = localStorage.getItem("previewWidth")
     return stored ? Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, parseInt(stored))) : DEFAULT_WIDTH
   })
-  const [dragging, setDragging] = useState(false)
+  const isResizing = useRef(false)
+  const [resizing, setResizing] = useState(false)
   const dragStartX = useRef(0)
   const dragStartWidth = useRef(0)
   const currentWidth = useRef(width)
+  const panelRef = useRef<HTMLElement>(null)
 
   const file = files.find((f) => f.id === previewFileId) ?? null
+
+  useEffect(() => {
+    function onMouseMove(e: MouseEvent) {
+      if (!isResizing.current) return
+      const delta = dragStartX.current - e.clientX
+      const next = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, dragStartWidth.current + delta))
+      currentWidth.current = next
+      if (panelRef.current) panelRef.current.style.width = `${next}px`
+    }
+    function onMouseUp() {
+      if (!isResizing.current) return
+      isResizing.current = false
+      setResizing(false)
+      document.body.style.cursor = ""
+      document.body.style.userSelect = ""
+      if (panelRef.current) panelRef.current.style.transition = ""
+      setWidth(currentWidth.current)
+      localStorage.setItem("previewWidth", String(currentWidth.current))
+    }
+    document.addEventListener("mousemove", onMouseMove)
+    document.addEventListener("mouseup", onMouseUp)
+    return () => {
+      document.removeEventListener("mousemove", onMouseMove)
+      document.removeEventListener("mouseup", onMouseUp)
+    }
+  }, [])
 
   useEffect(() => {
     if (!previewFileId) {
@@ -59,47 +87,24 @@ export function FilePreviewPanel() {
     }
   }, [previewFileId])
 
-  useEffect(() => {
-    if (!dragging) return
-
-    function onMouseMove(e: MouseEvent) {
-      const delta = dragStartX.current - e.clientX
-      const next = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, dragStartWidth.current + delta))
-      currentWidth.current = next
-      setWidth(next)
-    }
-
-    function onMouseUp() {
-      setDragging(false)
-      document.body.style.cursor = ""
-      document.body.style.userSelect = ""
-      localStorage.setItem("previewWidth", String(currentWidth.current))
-    }
-
-    document.addEventListener("mousemove", onMouseMove)
-    document.addEventListener("mouseup", onMouseUp)
-    return () => {
-      document.removeEventListener("mousemove", onMouseMove)
-      document.removeEventListener("mouseup", onMouseUp)
-    }
-  }, [dragging])
-
   function handleDragStart(e: React.MouseEvent) {
     e.preventDefault()
+    isResizing.current = true
+    setResizing(true)
     dragStartX.current = e.clientX
-    dragStartWidth.current = width
-    setDragging(true)
+    dragStartWidth.current = currentWidth.current
     document.body.style.cursor = "col-resize"
     document.body.style.userSelect = "none"
+    if (panelRef.current) panelRef.current.style.transition = "none"
   }
 
   const isOpen = !!previewFileId && !!file
 
   return (
     <aside
+      ref={panelRef}
       className={cn(
-        "flex flex-col shrink-0 bg-background h-screen sticky top-0 relative overflow-hidden",
-        !dragging && "transition-[width] duration-200",
+        "flex flex-col shrink-0 bg-background h-screen sticky top-0 relative overflow-hidden transition-[width] duration-200",
         isOpen && "border-l"
       )}
       style={{ width: isOpen ? width : 0 }}
@@ -107,10 +112,7 @@ export function FilePreviewPanel() {
       {isOpen && (
         <>
           <div
-            className={cn(
-              "absolute left-0 top-0 h-full w-1 cursor-col-resize z-10 transition-colors hover:bg-foreground/20",
-              dragging && "bg-foreground/20"
-            )}
+            className="absolute left-0 top-0 h-full w-1 cursor-col-resize z-10 transition-colors hover:bg-foreground/20"
             onMouseDown={handleDragStart}
           />
 
@@ -151,7 +153,8 @@ export function FilePreviewPanel() {
 
           <Separator />
 
-          <div className={cn("flex-1 overflow-hidden bg-muted/30", dragging && "pointer-events-none")}>
+          <div className="flex-1 overflow-hidden bg-muted/30 relative">
+            {resizing && <div className="absolute inset-0 z-10" />}
             {loading ? (
               <div className="flex items-center justify-center h-full">
                 <div className="h-6 w-6 animate-spin rounded-full border-2 border-foreground border-t-transparent" />

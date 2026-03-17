@@ -80,6 +80,7 @@ export function FileList() {
 
   function handleDragEnter(e: React.DragEvent) {
     if (!isFileDrag(e) && !isInternalDrag(e)) return
+    if (isFileDrag(e) && !canEdit) return
     e.preventDefault()
     if (dragCounter.current === 0) setIsOsDrag(isFileDrag(e))
     dragCounter.current++
@@ -93,6 +94,7 @@ export function FileList() {
 
   function handleDragOver(e: React.DragEvent) {
     if (!isFileDrag(e) && !isInternalDrag(e)) return
+    if (isFileDrag(e) && !canEdit) return
     e.preventDefault()
   }
 
@@ -103,6 +105,7 @@ export function FileList() {
     setIsOsDrag(false)
     const item = getDragItem(e)
     if (item) {
+      if (!canEdit) return
       const items = item.bulk ?? [item]
       const fileIds = items.filter((i) => i.type === "file").map((i) => i.id)
       const folderItems = items.filter((i) => i.type === "folder")
@@ -110,6 +113,7 @@ export function FileList() {
       await Promise.all(folderItems.map((i) => moveFolder(i.id, activeFolderId)))
       return
     }
+    if (!canEdit) return
     const droppedFiles = collectDroppedFiles(e.dataTransfer)
     await uploadFiles(droppedFiles, activeFolderId)
   }
@@ -174,7 +178,7 @@ export function FileList() {
                   : (dataroomOwnerEmail ? `Home (${dataroomOwnerEmail})` : (dataroomName ?? "Home"))}
               </button>
               {breadcrumb.map((crumb, i) => (
-                <span key={crumb.id} className="flex items-center gap-1 min-w-0">
+                <span key={crumb.id} className="flex items-baseline gap-1 min-w-0">
                   <ChevronRight className="h-3.5 w-3.5 shrink-0" />
                   <button
                     className="hover:text-foreground transition-colors truncate max-w-[200px]"
@@ -199,7 +203,7 @@ export function FileList() {
                 return parts ? <span className="shrink-0 text-muted-foreground/60">({parts})</span> : null
               })()}
             </nav>
-            <div className="flex items-baseline gap-3">
+            <div className="flex items-center gap-3">
               <h2 className="text-lg font-semibold shrink-0">
                 {activeFolder ? activeFolder.name : "Home"}
               </h2>
@@ -281,8 +285,8 @@ export function FileList() {
                         const files = Array.from(e.target.files ?? [])
                         if (files.length === 0) return
                         try {
-                          await uploadFiles(files, activeFolderId)
-                          toast.success(`${files.length} file${files.length > 1 ? "s" : ""} uploaded`)
+                          const uploaded = await uploadFiles(files, activeFolderId)
+                          if (uploaded > 0) toast.success(`${uploaded} file${uploaded > 1 ? "s" : ""} uploaded`)
                         } catch {
                           toast.error("Failed to upload files")
                         } finally {
